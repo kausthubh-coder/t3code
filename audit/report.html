@@ -1215,6 +1215,52 @@
         </table>
       </div>
 
+      <h3 id="videos">Videos of the top three issues</h3>
+      <p class="meta">
+        Recorded on the production build with real data. The cursor dot and captions are overlays I
+        added, because headless Chromium draws no cursor. The timings on screen are measured live in
+        the page.
+      </p>
+      <div class="shots">
+        <figure>
+          <video
+            src="videos/01-palette-wrong-command.mp4"
+            controls
+            muted
+            playsinline
+            preload="metadata"
+            style="width: 100%; border-radius: 8px"
+          ></video>
+          <figcaption>
+            Findings 1–2: type "link pull", press Enter, and it copies the thread ID.
+          </figcaption>
+        </figure>
+        <figure>
+          <video
+            src="videos/02-thread-switch-wait.mp4"
+            controls
+            muted
+            playsinline
+            preload="metadata"
+            style="width: 100%; border-radius: 8px"
+          ></video>
+          <figcaption>Finding 4: switch time at full CPU, then throttled 4×.</figcaption>
+        </figure>
+        <figure>
+          <video
+            src="videos/03-add-project-wrong-folder.mp4"
+            controls
+            muted
+            playsinline
+            preload="metadata"
+            style="width: 100%; border-radius: 8px"
+          ></video>
+          <figcaption>
+            Finding 3: pasting an absolute path creates an empty folder under the home directory.
+          </figcaption>
+        </figure>
+      </div>
+
       <h3 id="mockups">Mockups of the strongest ideas</h3>
       <p class="meta">
         Built in HTML on the app's own dark tokens, Lucide icons and provider marks

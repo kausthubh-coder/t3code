@@ -1,6 +1,6 @@
 # X thread
 
-Five posts. Each one is under 280 characters. The image file for each post is listed under it (all in `audit/mockups/`).
+Five posts. Each one is under 280 characters. The media for each post is listed under it: images are in `audit/mockups/`, videos in `audit/videos/`. X takes up to 4 images or 1 video per post.
 
 ---
 
@@ -10,7 +10,7 @@ Ran a design audit on T3 Code with Critly. The look holds up. The paths you hit 
 
 Type "link pull" in the command palette: no row is highlighted, but Enter still runs one. It copies the thread ID. The exact title match ranks second.
 
-Image: `01-palette-1600x900.png`
+Image: `01-palette-1600x900.png`. Or attach the video `videos/01-palette-wrong-command.mp4` (15 s), which shows it happening.
 
 ---
 
@@ -50,7 +50,7 @@ Numbers from a prod build: a warm thread switch takes 280–430ms (800ms cold). 
 
 You don't see that in a screenshot. You feel it by lunch.
 
-Image: none. Or attach a crop of the report's performance section.
+Video: `videos/02-thread-switch-wait.mp4` (24 s, with a live ms counter on each click).
 
 ---
 
