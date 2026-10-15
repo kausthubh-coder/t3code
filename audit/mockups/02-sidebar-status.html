@@ -1,0 +1,448 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Sidebar: which threads need me</title>
+    <link rel="stylesheet" href="t3.css" />
+    <style>
+      .copy {
+        position: absolute;
+        left: 56px;
+        top: 64px;
+        width: 520px;
+      }
+      .copy h1 {
+        margin: 0 0 18px;
+        font-size: 40px;
+        line-height: 46px;
+        letter-spacing: -0.025em;
+        font-weight: 600;
+        text-wrap: balance;
+      }
+      .copy p {
+        margin: 0 0 22px;
+        font-size: 18px;
+        line-height: 27px;
+        color: rgb(255 255 255 / 62%);
+        max-width: 30em;
+      }
+      .legend {
+        display: grid;
+        gap: 12px;
+        margin-top: 30px;
+        font-size: 16px;
+        color: rgb(255 255 255 / 80%);
+      }
+      .legend div {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .zoom {
+        zoom: 1.32;
+      }
+      .win {
+        top: 52px;
+        height: 796px;
+        width: 400px;
+      }
+      .sbw {
+        width: 300px;
+        height: 603px;
+      }
+      /* compact row (proposed) */
+      .grp {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        height: 28px;
+        padding: 0 10px;
+        margin-top: 6px;
+        font-size: 11px;
+        font-weight: 500;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: rgb(255 255 255 / 42%);
+      }
+      .grp .n {
+        margin-left: auto;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: 0;
+      }
+      .row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        height: 30px;
+        padding: 0 10px;
+        border-radius: 7px;
+        font-size: 13.5px;
+        color: rgb(241 243 247 / 78%);
+      }
+      .row .tt {
+        flex: 1;
+        min-width: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .row .tm {
+        font-size: 12px;
+        color: rgb(255 255 255 / 38%);
+        font-variant-numeric: tabular-nums;
+      }
+      .row.sel {
+        background: rgb(255 255 255 / 9%);
+        color: #fff;
+      }
+      .row.unread .tt {
+        color: #fff;
+        font-weight: 500;
+      }
+      .st {
+        width: 16px;
+        height: 16px;
+        display: grid;
+        place-items: center;
+        flex: none;
+      }
+      .dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--primary);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent);
+      }
+      .ring {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        border: 1.5px solid rgb(255 255 255 / 25%);
+      }
+      .need {
+        color: var(--warning-foreground);
+      }
+      .fail {
+        color: var(--error-foreground);
+      }
+      .run {
+        color: var(--info-foreground);
+      }
+      .act {
+        font-size: 11.5px;
+        font-weight: 500;
+        padding: 0 7px;
+        line-height: 20px;
+        border-radius: 6px;
+        background: color-mix(in srgb, var(--warning) 18%, transparent);
+        color: var(--warning-foreground);
+      }
+      .proj {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        height: 28px;
+        padding: 0 10px;
+        margin-top: 8px;
+        font-size: 12.5px;
+        font-weight: 500;
+        color: rgb(255 255 255 / 70%);
+      }
+      .proj .n {
+        margin-left: auto;
+        font-size: 11px;
+        color: rgb(255 255 255 / 35%);
+        font-weight: 400;
+      }
+      .cap {
+        position: absolute;
+        font-size: 15px;
+        line-height: 22px;
+        color: rgb(255 255 255 / 55%);
+      }
+      .cap b {
+        color: rgb(255 255 255 / 90%);
+        font-weight: 500;
+      }
+      .badge {
+        margin-left: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        line-height: 16px;
+        padding: 0 6px;
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--warning) 22%, transparent);
+        color: var(--warning-foreground);
+      }
+      /* square layout */
+      .square .copy {
+        left: 64px;
+        top: 56px;
+        width: 1072px;
+      }
+      .square .copy h1 {
+        font-size: 44px;
+        line-height: 50px;
+      }
+      .square .copy p {
+        max-width: 46em;
+      }
+      .square .legend {
+        display: flex;
+        gap: 28px;
+        margin-top: 0;
+        font-size: 15px;
+      }
+      .square .copy p {
+        margin-bottom: 14px;
+        font-size: 17px;
+        line-height: 25px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="stage" id="stage">
+      <div class="copy">
+        <h1>Six threads, and none of them says which one needs me</h1>
+        <p>
+          Today every row is 78&nbsp;px and ends with the same model icon. Finished, waiting on an
+          approval and failed all look identical.
+        </p>
+        <p>
+          Proposed: 30&nbsp;px rows (the slim row already exists in
+          <span class="mono" style="font-size: 15px">Sidebar.tsx</span>), grouped by project, with
+          one status glyph per thread and a
+          <b style="color: #fff; font-weight: 500">Needs you</b> group on top. The dark sidebar also
+          moves off pure&nbsp;black.
+        </p>
+        <div class="legend">
+          <div>
+            <span class="st need" data-i="circle-alert" data-s="18"></span>Needs you: approval or a
+            question
+          </div>
+          <div>
+            <span class="st run" data-i="loader-circle" data-s="18"></span>Running, with elapsed
+            time
+          </div>
+          <div>
+            <span class="st"><span class="dot"></span></span>Done, not seen yet
+          </div>
+          <div><span class="st fail" data-i="x" data-s="18"></span>Failed</div>
+        </div>
+      </div>
+
+      <div class="label" id="lb1">Before</div>
+      <div class="label" id="lb2"><b>After</b></div>
+
+      <!-- BEFORE: shipped card rows on #000 -->
+      <div class="window win" id="w1">
+        <div class="zoom">
+          <div class="sb sbw">
+            <div class="sb-top">
+              <span data-i="panel-left" data-s="16" style="color: #a3a3a3"></span
+              ><span class="name">T3 Code</span>
+            </div>
+            <div class="sb-search">
+              <span data-i="search" data-s="16"></span><span class="grow">Search</span
+              ><span class="sb-icons"
+                ><span data-i="list-filter" data-s="16"></span
+                ><span data-i="folder-plus" data-s="16"></span
+                ><span data-i="square-pen" data-s="16"></span
+              ></span>
+            </div>
+            <div class="sb-list">
+              <div class="card-row">
+                <div class="r1">
+                  <span class="chip pa">PA</span>pulse-api<span class="t">6m</span>
+                </div>
+                <div class="r2">Add a 'status' field to each mo…</div>
+                <div class="r3">master</div>
+                <span class="prov" data-b="claude" data-s="13"></span>
+              </div>
+              <div class="card-row">
+                <div class="r1"><span class="chip cy">◧</span>critly<span class="t">7m</span></div>
+                <div class="r2">Plan only, no edits: how would …</div>
+                <div class="r3">main</div>
+                <span class="prov" data-b="claude" data-s="13"></span>
+              </div>
+              <div class="card-row">
+                <div class="r1"><span class="chip cy">◧</span>critly<span class="t">8m</span></div>
+                <div class="r2">Draft a short CHANGELOG entr…</div>
+                <span class="prov" data-b="claude" data-s="13"></span>
+              </div>
+              <div class="card-row sel">
+                <div class="r1"><span class="chip cy">◧</span>critly<span class="t">3m</span></div>
+                <div class="r2">Which concepts in skills/critly/r…</div>
+                <span class="prov" data-b="claude" data-s="13"></span>
+              </div>
+              <div class="card-row">
+                <div class="r1">
+                  <span class="chip pa">PA</span>pulse-api<span class="t">11m</span>
+                </div>
+                <div class="r2">Read src/monitors.js and src/s…</div>
+                <span class="prov" data-b="claude" data-s="13"></span>
+              </div>
+              <div class="card-row">
+                <div class="r1">
+                  <span class="chip sr">SR</span>server<span class="t">16m</span>
+                </div>
+                <div class="r2">New thread</div>
+                <span class="prov" data-b="openai" data-s="13"></span>
+              </div>
+            </div>
+            <div
+              class="sb-foot"
+              style="
+                height: auto;
+                padding: 6px 18px 0;
+                font-size: 12px;
+                color: rgb(255 255 255 / 38%);
+              "
+            >
+              Settled (0)<span
+                style="flex: 1; height: 1px; background: rgb(255 255 255 / 8%)"
+              ></span>
+            </div>
+            <div class="sb-foot">
+              <span data-i="settings" data-s="16"></span
+              ><span data-i="git-pull-request" data-s="16"></span
+              ><span data-i="chart-column" data-s="16"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AFTER: compact, grouped, with status -->
+      <div class="window win" id="w2">
+        <div class="zoom">
+          <div class="sb sbw lifted">
+            <div class="sb-top">
+              <span data-i="panel-left" data-s="16" style="color: #a3a3a3"></span
+              ><span class="name">T3 Code</span>
+            </div>
+            <div class="sb-search">
+              <span data-i="search" data-s="16"></span><span class="grow">Search</span
+              ><span class="sb-icons"
+                ><span data-i="list-filter" data-s="16"></span
+                ><span data-i="folder-plus" data-s="16"></span
+                ><span data-i="square-pen" data-s="16"></span
+              ></span>
+            </div>
+            <div class="sb-list">
+              <div class="grp" style="margin-top: 0; color: var(--warning-foreground)">
+                Needs you<span class="n">2</span>
+              </div>
+              <div class="row">
+                <span class="st need" data-i="circle-alert" data-s="15"></span
+                ><span class="tt">pulse-api · Run npm install?</span
+                ><span class="act">Approve</span>
+              </div>
+              <div class="row">
+                <span class="st need" data-i="list-checks" data-s="15"></span
+                ><span class="tt">critly · Plan ready: --cookie flag</span
+                ><span class="tm">2m</span>
+              </div>
+
+              <div class="proj">
+                <span class="chip pa">PA</span>pulse-api<span class="n">3</span>
+              </div>
+              <div class="row sel unread">
+                <span class="st"><span class="dot"></span></span
+                ><span class="tt">Healthz route and monitor status</span><span class="tm">6m</span>
+              </div>
+              <div class="row">
+                <span class="st run" data-i="loader-circle" data-s="15"></span
+                ><span class="tt">Move monitors to SQLite</span><span class="tm run">1:42</span>
+              </div>
+              <div class="row">
+                <span class="st"><span class="ring"></span></span
+                ><span class="tt">404 for unknown monitor ids</span><span class="tm">11m</span>
+              </div>
+
+              <div class="proj"><span class="chip cy">◧</span>critly<span class="n">4</span></div>
+              <div class="row unread">
+                <span class="st"><span class="dot"></span></span
+                ><span class="tt">Motion durations by concept</span><span class="tm">3m</span>
+              </div>
+              <div class="row">
+                <span class="st"><span class="ring"></span></span
+                ><span class="tt">CHANGELOG entry for taste pass</span><span class="tm">8m</span>
+              </div>
+              <div class="row">
+                <span class="st fail" data-i="x" data-s="15"></span
+                ><span class="tt">Audit README concept links</span><span class="tm">1h</span>
+              </div>
+              <div class="row">
+                <span class="st"><span class="ring"></span></span
+                ><span class="tt">Which concepts mention 120Hz</span><span class="tm">2h</span>
+              </div>
+
+              <div class="proj"><span class="chip sr">SR</span>server<span class="n">1</span></div>
+              <div class="row">
+                <span class="st"><span class="ring"></span></span
+                ><span class="tt">Explain the orchestrator outbox</span><span class="tm">1d</span>
+              </div>
+            </div>
+            <div
+              class="sb-foot"
+              style="
+                height: auto;
+                padding: 6px 18px 0;
+                font-size: 12px;
+                color: rgb(255 255 255 / 38%);
+              "
+            >
+              Settled (12)<span
+                style="flex: 1; height: 1px; background: rgb(255 255 255 / 8%)"
+              ></span>
+            </div>
+            <div class="sb-foot">
+              <span data-i="settings" data-s="16"></span
+              ><span data-i="git-pull-request" data-s="16"></span
+              ><span data-i="chart-column" data-s="16"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cap" id="c1"><b>5½ threads</b> fit, and every state looks the same</div>
+      <div class="cap" id="c2"><b>11 threads</b> in the same height, 2 need you</div>
+    </div>
+    <script>
+      // Two crops from one page: #square lays the same parts out on a 1200x1200 canvas.
+      const sq = location.hash === "#square";
+      const $ = (id) => document.getElementById(id);
+      const place = (id, x, y) => {
+        $(id).style.left = x + "px";
+        $(id).style.top = y + "px";
+      };
+      if (sq) {
+        $("stage").classList.add("square");
+        document.querySelectorAll(".zoom").forEach((z) => {
+          z.style.zoom = "1.19";
+        });
+        for (const id of ["w1", "w2"]) {
+          $(id).style.height = "718px";
+          $(id).style.width = "357px";
+        }
+        place("w1", 183, 404);
+        place("w2", 660, 404);
+        place("lb1", 183, 376);
+        place("lb2", 660, 376);
+        place("c1", 183, 1140);
+        place("c2", 660, 1140);
+      } else {
+        place("w1", 640, 52);
+        place("w2", 1104, 52);
+        place("lb1", 640, 22);
+        place("lb2", 1104, 22);
+        place("c1", 640, 856);
+        place("c2", 1104, 856);
+        for (const id of ["w1", "w2"]) {
+          $(id).style.height = "796px";
+        }
+      }
+    </script>
+    <script src="icons.js"></script>
+  </body>
+</html>

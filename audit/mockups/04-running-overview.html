@@ -1,0 +1,510 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Running overview</title>
+    <link rel="stylesheet" href="t3.css" />
+    <style>
+      .win {
+        left: 40px;
+        top: 64px;
+        width: 1520px;
+        height: 812px;
+      }
+      .z {
+        zoom: 1.12;
+        display: flex;
+        width: 1357px;
+        height: 725px;
+      }
+      .nav {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        height: 30px;
+        padding: 0 10px;
+        border-radius: 7px;
+        font-size: 13.5px;
+        color: rgb(241 243 247 / 80%);
+      }
+      .nav.sel {
+        background: rgb(255 255 255 / 9%);
+        color: #fff;
+      }
+      .nav .n {
+        margin-left: auto;
+        font-size: 12px;
+        font-variant-numeric: tabular-nums;
+        color: rgb(255 255 255 / 45%);
+      }
+      .nav .n.w {
+        color: var(--warning-foreground);
+        font-weight: 600;
+      }
+      .row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        height: 30px;
+        padding: 0 10px;
+        border-radius: 7px;
+        font-size: 13.5px;
+        color: rgb(241 243 247 / 78%);
+      }
+      .row .tt {
+        flex: 1;
+        min-width: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .row .tm {
+        font-size: 12px;
+        color: rgb(255 255 255 / 38%);
+        font-variant-numeric: tabular-nums;
+      }
+      .st {
+        width: 16px;
+        height: 16px;
+        display: grid;
+        place-items: center;
+        flex: none;
+      }
+      .ring {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        border: 1.5px solid rgb(255 255 255 / 25%);
+      }
+      .proj {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        height: 28px;
+        padding: 0 10px;
+        margin-top: 10px;
+        font-size: 12.5px;
+        font-weight: 500;
+        color: rgb(255 255 255 / 70%);
+      }
+      .page {
+        flex: 1;
+        overflow: hidden;
+        padding: 4px 28px 0;
+      }
+      .h {
+        display: flex;
+        align-items: baseline;
+        gap: 16px;
+        margin: 6px 0 16px;
+      }
+      .h h2 {
+        margin: 0;
+        font-size: 20px;
+        line-height: 28px;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+      }
+      .tabs {
+        display: flex;
+        gap: 4px;
+      }
+      .tab {
+        font-size: 13px;
+        padding: 3px 10px;
+        border-radius: 999px;
+        color: var(--muted-foreground);
+      }
+      .tab b {
+        font-weight: 500;
+        color: rgb(255 255 255 / 85%);
+        font-variant-numeric: tabular-nums;
+      }
+      .tab.on {
+        background: rgb(255 255 255 / 8%);
+        color: #fff;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+      .card {
+        border: 1px solid rgb(255 255 255 / 8%);
+        border-radius: 14px;
+        background: color-mix(in srgb, var(--background) 95%, #fff);
+        padding: 12px 14px;
+        display: grid;
+        gap: 9px;
+      }
+      .card.need {
+        border-color: color-mix(in srgb, var(--warning) 35%, transparent);
+        box-shadow: inset 3px 0 0 color-mix(in srgb, var(--warning) 70%, transparent);
+      }
+      .card.fail {
+        box-shadow: inset 3px 0 0 color-mix(in srgb, var(--diff-deletion) 70%, transparent);
+      }
+      .c1 {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12.5px;
+        color: var(--muted-foreground);
+      }
+      .c1 .r {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-variant-numeric: tabular-nums;
+      }
+      .ct {
+        font-size: 15px;
+        font-weight: 500;
+        line-height: 21px;
+      }
+      .tail {
+        font-family: var(--font-mono);
+        font-size: 12px;
+        line-height: 18px;
+        color: rgb(255 255 255 / 60%);
+        background: rgb(0 0 0 / 28%);
+        border: 1px solid rgb(255 255 255 / 5%);
+        border-radius: 8px;
+        padding: 7px 10px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .tail .p {
+        color: var(--info-foreground);
+      }
+      .ask {
+        font-size: 13.5px;
+        line-height: 20px;
+        color: rgb(255 255 255 / 88%);
+      }
+      .acts {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+      }
+      .acts .sp {
+        flex: 1;
+      }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 12px;
+        font-weight: 500;
+        padding: 0 8px;
+        line-height: 20px;
+        border-radius: 999px;
+      }
+      .pill.need {
+        background: color-mix(in srgb, var(--warning) 16%, transparent);
+        color: var(--warning-foreground);
+      }
+      .pill.run {
+        background: color-mix(in srgb, oklch(0.62 0.15 254) 16%, transparent);
+        color: var(--info-foreground);
+      }
+      .pill.done {
+        background: color-mix(in srgb, var(--primary) 18%, transparent);
+        color: oklch(0.78 0.1 264);
+      }
+      .pill.fail {
+        background: color-mix(in srgb, var(--diff-deletion) 16%, transparent);
+        color: var(--error-foreground);
+      }
+      .cap {
+        position: absolute;
+        left: 40px;
+        top: 24px;
+        font-size: 13px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: rgb(255 255 255 / 45%);
+        font-weight: 500;
+      }
+      .cap b {
+        color: rgb(255 255 255 / 88%);
+        font-weight: 500;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="stage">
+      <div class="cap">
+        <b>Concept</b> · every agent you have running, on one screen, with the next action on each
+        card
+      </div>
+      <div class="window win">
+        <div class="z">
+          <div class="sb lifted" style="width: 262px">
+            <div class="sb-top">
+              <div class="lights color"><i></i><i></i><i></i></div>
+            </div>
+            <div class="sb-search">
+              <span data-i="search" data-s="16"></span><span class="grow">Search</span
+              ><span class="sb-icons"
+                ><span data-i="list-filter" data-s="16"></span
+                ><span data-i="folder-plus" data-s="16"></span
+                ><span data-i="square-pen" data-s="16"></span
+              ></span>
+            </div>
+            <div class="sb-list">
+              <div class="nav sel">
+                <span data-i="layout-grid" data-s="15"></span>Running<span class="n w"
+                  >2 need you</span
+                >
+              </div>
+              <div class="nav">
+                <span data-i="inbox" data-s="15"></span>Inbox<span class="n">3</span>
+              </div>
+              <div class="proj"><span class="chip pa">PA</span>pulse-api</div>
+              <div class="row">
+                <span
+                  class="st"
+                  style="color: var(--warning-foreground)"
+                  data-i="circle-alert"
+                  data-s="15"
+                ></span
+                ><span class="tt">Move monitors to SQLite</span><span class="tm">4m</span>
+              </div>
+              <div class="row">
+                <span
+                  class="st"
+                  style="color: var(--info-foreground)"
+                  data-i="loader-circle"
+                  data-s="15"
+                ></span
+                ><span class="tt">Rate-limit POST /checks</span
+                ><span class="tm" style="color: var(--info-foreground)">2:10</span>
+              </div>
+              <div class="row">
+                <span class="st"><span class="ring"></span></span
+                ><span class="tt">Healthz route and monitor status</span><span class="tm">6m</span>
+              </div>
+              <div class="proj"><span class="chip cy">◧</span>critly</div>
+              <div class="row">
+                <span
+                  class="st"
+                  style="color: var(--warning-foreground)"
+                  data-i="list-checks"
+                  data-s="15"
+                ></span
+                ><span class="tt">--cookie flag for critly check</span><span class="tm">2m</span>
+              </div>
+              <div class="row">
+                <span
+                  class="st"
+                  style="color: var(--info-foreground)"
+                  data-i="loader-circle"
+                  data-s="15"
+                ></span
+                ><span class="tt">Taste pass on 390 screens</span
+                ><span class="tm" style="color: var(--info-foreground)">0:48</span>
+              </div>
+              <div class="row">
+                <span
+                  class="st"
+                  style="color: var(--error-foreground)"
+                  data-i="x"
+                  data-s="15"
+                ></span
+                ><span class="tt">Audit README concept links</span><span class="tm">1h</span>
+              </div>
+              <div class="proj"><span class="chip sr">SR</span>server</div>
+              <div class="row">
+                <span
+                  class="st"
+                  style="color: var(--info-foreground)"
+                  data-i="loader-circle"
+                  data-s="15"
+                ></span
+                ><span class="tt">Explain the orchestrator outbox</span
+                ><span class="tm" style="color: var(--info-foreground)">5:31</span>
+              </div>
+            </div>
+            <div class="sb-foot">
+              <span data-i="settings" data-s="16"></span
+              ><span data-i="git-pull-request" data-s="16"></span
+              ><span data-i="chart-column" data-s="16"></span>
+            </div>
+          </div>
+
+          <div class="main">
+            <div class="topbar">
+              <span class="title">Running</span
+              ><span class="right"><span data-i="panel-right" data-s="16"></span></span>
+            </div>
+            <div class="page">
+              <div class="h">
+                <h2>7 agents on this machine</h2>
+                <div class="tabs">
+                  <span class="tab on">All <b>7</b></span
+                  ><span class="tab">Needs you <b>2</b></span
+                  ><span class="tab">Running <b>3</b></span
+                  ><span class="tab">Done <b>1</b></span
+                  ><span class="tab">Failed <b>1</b></span>
+                </div>
+              </div>
+              <div class="grid">
+                <div class="card need">
+                  <div class="c1">
+                    <span class="chip pa">PA</span>pulse-api ·
+                    <span class="mono" style="font-size: 12px">sqlite-monitors</span
+                    ><span class="r"
+                      ><span class="pill need"
+                        ><span data-i="circle-alert" data-s="12"></span>Needs approval</span
+                      >4m</span
+                    >
+                  </div>
+                  <div class="ct">Move monitors to SQLite</div>
+                  <div class="ask">Wants to run <code>npm install better-sqlite3</code></div>
+                  <div class="acts">
+                    <span class="btn primary">Approve</span><span class="btn">Deny</span
+                    ><span class="sp"></span
+                    ><span class="btn ghost"
+                      >Open thread<span data-i="chevron-right" data-s="14"></span
+                    ></span>
+                  </div>
+                </div>
+                <div class="card need">
+                  <div class="c1">
+                    <span class="chip cy">◧</span>critly ·
+                    <span class="mono" style="font-size: 12px">main</span
+                    ><span class="r"
+                      ><span class="pill need"
+                        ><span data-i="list-checks" data-s="12"></span>Plan ready</span
+                      >2m</span
+                    >
+                  </div>
+                  <div class="ct">--cookie flag for critly check</div>
+                  <div class="ask">
+                    5 steps: parse the flag, load cookies into the context, document it, add 2
+                    tests, update the README.
+                  </div>
+                  <div class="acts">
+                    <span class="btn primary">Implement</span><span class="btn">Review plan</span
+                    ><span class="sp"></span
+                    ><span class="btn ghost"
+                      >Open thread<span data-i="chevron-right" data-s="14"></span
+                    ></span>
+                  </div>
+                </div>
+                <div class="card">
+                  <div class="c1">
+                    <span class="chip pa">PA</span>pulse-api ·
+                    <span class="mono" style="font-size: 12px">rate-limit</span
+                    ><span class="r"
+                      ><span class="pill run"
+                        ><span data-i="loader-circle" data-s="12"></span>Running</span
+                      ><span style="color: var(--info-foreground)">2:10</span></span
+                    >
+                  </div>
+                  <div class="ct">Rate-limit POST /checks</div>
+                  <div class="tail">
+                    <span class="p">$</span> node --test test/rate-limit.test.js ✓ 4 passed
+                  </div>
+                  <div class="acts">
+                    <span data-b="claude" data-s="13"></span
+                    ><span class="muted" style="font-size: 12.5px"
+                      >Claude Sonnet 5.5 · 3 files changed</span
+                    ><span class="sp"></span
+                    ><span class="btn ghost"
+                      ><span data-i="circle-pause" data-s="13"></span>Stop</span
+                    >
+                  </div>
+                </div>
+                <div class="card">
+                  <div class="c1">
+                    <span class="chip cy">◧</span>critly ·
+                    <span class="mono" style="font-size: 12px">main</span
+                    ><span class="r"
+                      ><span class="pill run"
+                        ><span data-i="loader-circle" data-s="12"></span>Running</span
+                      ><span style="color: var(--info-foreground)">0:48</span></span
+                    >
+                  </div>
+                  <div class="ct">Taste pass on 390 screens</div>
+                  <div class="tail">
+                    Reading skills/critly-audit/scripts/taste.js (lines 120–260)
+                  </div>
+                  <div class="acts">
+                    <span data-b="openai" data-s="13"></span
+                    ><span class="muted" style="font-size: 12.5px"
+                      >gpt-6-astra · read-only so far</span
+                    ><span class="sp"></span
+                    ><span class="btn ghost"
+                      ><span data-i="circle-pause" data-s="13"></span>Stop</span
+                    >
+                  </div>
+                </div>
+                <div class="card">
+                  <div class="c1">
+                    <span class="chip pa">PA</span>pulse-api ·
+                    <span class="mono" style="font-size: 12px">master</span
+                    ><span class="r"
+                      ><span class="pill done"
+                        ><span data-i="circle-check" data-s="12"></span>Done, unread</span
+                      >6m</span
+                    >
+                  </div>
+                  <div class="ct">Healthz route and monitor status</div>
+                  <div class="acts">
+                    <span class="stat"
+                      ><span class="add">+27</span> <span class="del">−2</span></span
+                    ><span class="muted" style="font-size: 12.5px">· 4 files · tests 9/9</span
+                    ><span class="sp"></span><span class="btn">Review diff</span>
+                  </div>
+                </div>
+                <div class="card fail">
+                  <div class="c1">
+                    <span class="chip cy">◧</span>critly ·
+                    <span class="mono" style="font-size: 12px">main</span
+                    ><span class="r"
+                      ><span class="pill fail"><span data-i="x" data-s="12"></span>Failed</span
+                      >1h</span
+                    >
+                  </div>
+                  <div class="ct">Audit README concept links</div>
+                  <div class="acts">
+                    <span class="muted" style="font-size: 12.5px"
+                      >Usage limit reached · resets 14:00</span
+                    ><span class="sp"></span><span class="btn">Resume at reset</span>
+                  </div>
+                </div>
+                <div class="card">
+                  <div class="c1">
+                    <span class="chip sr">SR</span>server ·
+                    <span class="mono" style="font-size: 12px">main</span
+                    ><span class="r"
+                      ><span class="pill run"
+                        ><span data-i="loader-circle" data-s="12"></span>Running</span
+                      ><span style="color: var(--info-foreground)">5:31</span></span
+                    >
+                  </div>
+                  <div class="ct">Explain the orchestrator outbox</div>
+                  <div class="tail">Reading apps/server/src/orchestration-v2/Orchestrator.ts</div>
+                  <div class="acts">
+                    <span data-b="claude" data-s="13"></span
+                    ><span class="muted" style="font-size: 12.5px"
+                      >Claude Opus 5.5 · read-only so far</span
+                    ><span class="sp"></span
+                    ><span class="btn ghost"
+                      ><span data-i="circle-pause" data-s="13"></span>Stop</span
+                    >
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script src="icons.js"></script>
+  </body>
+</html>

@@ -1,0 +1,1475 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>T3 Code design audit</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: oklch(99.2% 0 0);
+        --surface: #fff;
+        --sunken: oklch(97% 0.001 286);
+        --text: oklch(27.4% 0.006 286);
+        --muted: oklch(55.2% 0.016 286);
+        --faint: oklch(70.5% 0.015 286);
+        --border: oklch(92% 0.004 286);
+        --accent: oklch(0.488 0.217 264);
+        --high: oklch(0.55 0.2 27);
+        --high-bg: oklch(0.55 0.2 27 / 0.09);
+        --med: oklch(0.6 0.13 70);
+        --med-bg: oklch(0.7 0.14 75 / 0.13);
+        --low: oklch(0.55 0.02 286);
+        --low-bg: oklch(0.55 0.02 286 / 0.09);
+        --good: oklch(0.52 0.13 160);
+        --good-bg: oklch(0.6 0.13 160 / 0.1);
+        --mono: ui-monospace, "SF Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+          color-scheme: dark;
+          --bg: oklch(14.5% 0 0);
+          --surface: oklch(18% 0 0);
+          --sunken: oklch(20.5% 0 0);
+          --text: oklch(94.5% 0 0);
+          --muted: oklch(70.8% 0 0);
+          --faint: oklch(58% 0 0);
+          --border: oklch(100% 0 0 / 0.08);
+          --accent: oklch(0.72 0.12 264);
+          --high: oklch(0.72 0.15 25);
+          --high-bg: oklch(0.65 0.18 25 / 0.16);
+          --med: oklch(0.8 0.12 80);
+          --med-bg: oklch(0.75 0.13 80 / 0.14);
+          --low: oklch(0.75 0.01 286);
+          --low-bg: oklch(1 0 0 / 0.06);
+          --good: oklch(0.78 0.12 160);
+          --good-bg: oklch(0.7 0.13 160 / 0.14);
+        }
+      }
+      :root[data-theme="dark"] {
+        color-scheme: dark;
+        --bg: oklch(14.5% 0 0);
+        --surface: oklch(18% 0 0);
+        --sunken: oklch(20.5% 0 0);
+        --text: oklch(94.5% 0 0);
+        --muted: oklch(70.8% 0 0);
+        --faint: oklch(58% 0 0);
+        --border: oklch(100% 0 0 / 0.08);
+        --accent: oklch(0.72 0.12 264);
+        --high: oklch(0.72 0.15 25);
+        --high-bg: oklch(0.65 0.18 25 / 0.16);
+        --med: oklch(0.8 0.12 80);
+        --med-bg: oklch(0.75 0.13 80 / 0.14);
+        --low: oklch(0.75 0.01 286);
+        --low-bg: oklch(1 0 0 / 0.06);
+        --good: oklch(0.78 0.12 160);
+        --good-bg: oklch(0.7 0.13 160 / 0.14);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        background: var(--bg);
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font:
+          15px/1.55 -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          system-ui,
+          sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      main {
+        max-width: 1120px;
+        margin: 0 auto;
+        padding: 48px 24px 96px;
+      }
+      @media (max-width: 640px) {
+        main {
+          padding: 28px 16px 64px;
+        }
+      }
+      h1 {
+        font-size: 30px;
+        line-height: 36px;
+        letter-spacing: -0.02em;
+        margin: 0 0 8px;
+        text-wrap: balance;
+      }
+      h2 {
+        font-size: 20px;
+        line-height: 28px;
+        letter-spacing: -0.01em;
+        margin: 64px 0 12px;
+      }
+      h3 {
+        font-size: 15px;
+        margin: 28px 0 8px;
+      }
+      p,
+      li {
+        max-width: 72ch;
+      }
+      .lede {
+        color: var(--muted);
+        margin: 0 0 32px;
+      }
+      .meta {
+        color: var(--muted);
+        font-size: 13px;
+      }
+      a {
+        color: var(--accent);
+        text-underline-offset: 2px;
+      }
+      code,
+      .mono {
+        font-family: var(--mono);
+        font-size: 0.86em;
+      }
+      code {
+        background: var(--sunken);
+        padding: 1px 4px;
+        border-radius: 4px;
+      }
+      nav.toc {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px 16px;
+        font-size: 13px;
+        margin: 0 0 8px;
+      }
+      nav.toc a {
+        color: var(--muted);
+        text-decoration: none;
+      }
+      nav.toc a:hover {
+        color: var(--text);
+      }
+      .summary {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+      .verdict {
+        font-size: 18px;
+        line-height: 28px;
+        max-width: 64ch;
+        margin: 0;
+        text-wrap: pretty;
+      }
+      ol.top3 {
+        padding-left: 20px;
+        margin: 0;
+      }
+      ol.top3 li {
+        margin: 6px 0;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+        line-height: 1.45;
+      }
+      th {
+        text-align: left;
+        font-weight: 500;
+        color: var(--muted);
+        padding: 8px 10px;
+        border-bottom: 1px solid var(--border);
+        white-space: nowrap;
+      }
+      td {
+        padding: 10px;
+        border-bottom: 1px solid var(--border);
+        vertical-align: top;
+      }
+      td.num {
+        font-variant-numeric: tabular-nums;
+        text-align: right;
+        white-space: nowrap;
+      }
+      .scroll {
+        overflow-x: auto;
+        margin: 0 -24px;
+        padding: 0 24px;
+      }
+      @media (max-width: 640px) {
+        .scroll {
+          margin: 0 -16px;
+          padding: 0 16px;
+        }
+      }
+      .findings td:nth-child(5),
+      .findings td:nth-child(6) {
+        min-width: 210px;
+      }
+      .findings td:nth-child(4) {
+        font-family: var(--mono);
+        font-size: 12px;
+        min-width: 150px;
+        word-break: break-word;
+      }
+      .pill {
+        display: inline-block;
+        font-size: 12px;
+        font-weight: 500;
+        padding: 1px 8px;
+        border-radius: 999px;
+        white-space: nowrap;
+      }
+      .High,
+      .Poor {
+        color: var(--high);
+        background: var(--high-bg);
+      }
+      .Medium,
+      .Needs {
+        color: var(--med);
+        background: var(--med-bg);
+      }
+      .Low {
+        color: var(--low);
+        background: var(--low-bg);
+      }
+      .Good {
+        color: var(--good);
+        background: var(--good-bg);
+      }
+      .shots {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 20px;
+        margin-top: 16px;
+      }
+      figure {
+        margin: 0;
+      }
+      figure img {
+        width: 100%;
+        height: auto;
+        display: block;
+        border-radius: 8px;
+        outline: 1px solid var(--border);
+        outline-offset: -1px;
+        background: var(--sunken);
+      }
+      figure.phone img {
+        max-width: 260px;
+      }
+      figcaption {
+        font-size: 13px;
+        color: var(--muted);
+        margin-top: 8px;
+      }
+      .wide {
+        grid-column: 1 / -1;
+      }
+      .ideas td:first-child {
+        font-variant-numeric: tabular-nums;
+        color: var(--muted);
+      }
+      .size {
+        font-family: var(--mono);
+        font-size: 12px;
+      }
+      ul.tight {
+        padding-left: 20px;
+      }
+      ul.tight li {
+        margin: 4px 0;
+      }
+      .batch {
+        border-top: 1px solid var(--border);
+        padding: 16px 0 4px;
+      }
+      .batch h3 {
+        margin-top: 0;
+      }
+      .note {
+        font-size: 13px;
+        color: var(--muted);
+        border-left: 2px solid var(--border);
+        padding-left: 12px;
+      }
+      .kpis {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 24px;
+        margin: 8px 0 0;
+      }
+      .kpi b {
+        display: block;
+        font-size: 22px;
+        line-height: 28px;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: -0.01em;
+      }
+      .kpi span {
+        font-size: 13px;
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p class="meta">
+        Design audit · apps/web · stable build and dev server · 15 Oct 2026 · method: Critly audit
+        (critly-audit skill), Playwright + Chromium 141
+      </p>
+      <h1>T3 Code: design audit</h1>
+      <p class="lede">
+        The look is quiet and well made. The things people do hundreds of times a day are where it
+        slips: the command palette can run the wrong command, thread switches wait, and the composer
+        drops a frame per key.
+      </p>
+      <nav class="toc" aria-label="Sections">
+        <a href="#summary">Summary</a><a href="#scorecard">Scorecard</a
+        ><a href="#findings">Findings</a><a href="#outside">Outside Critly</a
+        ><a href="#composition">What each screen leads with</a><a href="#performance">Performance</a
+        ><a href="#ideas">UI/UX ideas</a><a href="#plan">Fix plan</a><a href="#screens">Screens</a
+        ><a href="#method">Method and limits</a>
+      </nav>
+
+      <h2 id="summary">Summary</h2>
+      <div class="summary">
+        <p class="meta">
+          <b>Intent (assumed):</b> a tool developers keep open all day to run and review agent
+          threads. Compact, instant, quiet. Its users notice a dropped frame, a lying spinner and a
+          stale label. Direction note: <a href="direction.md">direction.md</a>.
+        </p>
+        <p class="verdict">
+          <b>Verdict:</b> the visual system is close to right for this intent. The fixes that matter
+          most are not visual. Make the palette trustworthy, make switching threads feel instant,
+          and stop the add-project flow from quietly creating the wrong folder.
+        </p>
+        <div>
+          <p class="meta" style="margin: 0 0 6px"><b>Top 3 changes</b></p>
+          <ol class="top3">
+            <li>
+              <b>Make the command palette trustworthy and instant.</b> Today, after you type, the
+              row that Enter will run has no highlight. A title match like "Link pull" loses to
+              "Copy thread ID". It also takes 114–212&nbsp;ms to paint and then fades and scales for
+              200&nbsp;ms.
+            </li>
+            <li>
+              <b>Make thread switching feel instant.</b> A switch takes 800&nbsp;ms cold and
+              280–430&nbsp;ms warm on desktop, and 0.9–2.1&nbsp;s on a 4× slower CPU. Start loading
+              on hover or press, and render the rows as real links.
+            </li>
+            <li>
+              <b>Fix the "Local folder" path.</b> The input starts with <code>~/</code>. Paste an
+              absolute path after it and you get <code>~//tmp/…</code>, a new empty folder under
+              your home. The agent then works in the wrong place.
+            </li>
+          </ol>
+        </div>
+      </div>
+
+      <h2 id="scorecard">Scorecard</h2>
+      <div class="scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Area</th>
+              <th>Grade</th>
+              <th>Why</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>System</td>
+              <td><span class="pill Needs">Needs work</span></td>
+              <td>
+                11 font sizes (12 and 14&nbsp;px do 85% of the work; 13, 11, 10.3, 10 and
+                8.3&nbsp;px are drift), 39 spacing values, 14 radii. The dark sidebar is hard-coded
+                <code>#000</code> next to a <code>neutral-950</code> canvas. Light-mode diff counts
+                are 2.46:1. One easing does 2,283 of 2,443 transitions, which is good.
+              </td>
+            </tr>
+            <tr>
+              <td>Composition</td>
+              <td><span class="pill Needs">Needs work</span></td>
+              <td>
+                In light mode the content leads: the conversation at 1.6×, the new-thread headline
+                at 2.5×. In dark mode the black sidebar leads every desktop screen, at 4.0–14.2×
+                over the content, even through dialog scrims. Providers settings nests boxes 4 deep,
+                and its two solid toggles tie (1.0×) at both widths.
+              </td>
+            </tr>
+            <tr>
+              <td>Interaction</td>
+              <td><span class="pill Poor">Poor</span></td>
+              <td>
+                The palette's active row disappears after typing, and Enter runs it anyway. "Local
+                folder" can create the wrong folder. The context menu has no menu roles. Delete asks
+                "Confirm". On the good side: a visible focus ring, a skip link, and focus returns to
+                the composer after the palette.
+              </td>
+            </tr>
+            <tr>
+              <td>Motion</td>
+              <td><span class="pill Needs">Needs work</span></td>
+              <td>
+                The palette and dialogs fade, scale and blur for 200&nbsp;ms, even with reduced
+                motion on (the scale stays). There are 22 <code>transition: all</code> and 44
+                layout-property transitions. Press feedback (scale 0.97, 150&nbsp;ms) is right.
+              </td>
+            </tr>
+            <tr>
+              <td>Performance</td>
+              <td><span class="pill Needs">Needs work</span></td>
+              <td>
+                2.07&nbsp;MB of compressed JS (6.2&nbsp;MB decoded, 247 files) to open one thread.
+                The thread appears 5.4–7.1&nbsp;s after navigation on desktop and 23–25&nbsp;s on a
+                throttled phone. Keystrokes take 2× a plain textarea. Long-thread scroll drops
+                10–28% of frames.
+              </td>
+            </tr>
+            <tr>
+              <td>Content</td>
+              <td><span class="pill Needs">Needs work</span></td>
+              <td>
+                Copy is plain and mostly good. Gaps: "Confirm" on Delete; a new thread's placeholder
+                offers "follow-ups"; the Codex error points to a settings path in prose with no
+                link. Thread titles are the first 40 characters of the prompt.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2 id="findings">Findings</h2>
+      <p class="meta">
+        Most severe first. 25 rows. "Where" is relative to <code>apps/web/src</code>. Each concept
+        links to its page on critly.vercel.app; I read each reference before citing it. Counts come
+        from the in-page check (<code>__critlyCheck</code>) on 9 screens × 2 widths × 2 schemes:
+        8,753 elements, 466 errors and 109 reviews. 131 of the errors are unique, after repeats
+        across screens are merged. A few contrast errors fall on the dimmed page behind an open
+        overlay; I dropped those.
+      </p>
+      <div class="scroll">
+        <table class="findings">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Severity</th>
+              <th>Screen</th>
+              <th>Where</th>
+              <th>Before</th>
+              <th>After</th>
+              <th>Concept</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1</td>
+              <td><span class="pill High">High</span></td>
+              <td>Command palette</td>
+              <td>components/ui/command.tsx:191-197, CommandPaletteResults.tsx:205</td>
+              <td>
+                Type "Link pull". Base UI marks "Copy thread ID" <code>data-highlighted</code>, but
+                the palette only paints <code>data-active</code>, so no row shows as selected. Enter
+                copies the thread ID.
+              </td>
+              <td>
+                Use one source of truth for the active row. When the query changes, reset it to the
+                first result. Paint it with <code>bg-accent</code> in both themes. The default dark
+                highlight is 4% white, which is too faint.
+              </td>
+              <td>
+                <a href="https://critly.vercel.app/command-menu">Command Menu</a>,
+                <a href="https://critly.vercel.app/interaction-states">Interaction States</a>
+              </td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td><span class="pill High">High</span></td>
+              <td>Command palette</td>
+              <td>CommandPalette.logic.ts:417-438, CommandPalette.tsx:1927,1945</td>
+              <td>
+                Titles are not part of <code>searchTerms</code>. Each term is scored on its own, so
+                in multi-word queries every row scores 0 and keeps source order. "Copy thread ID"
+                outranks "Link pull request to thread".
+              </td>
+              <td>
+                Match the title and keywords as one string. Rank in this order: exact title, title
+                prefix, all tokens in the title, then keywords. Show the keyword that matched.
+              </td>
+              <td><a href="https://critly.vercel.app/command-menu">Command Menu</a></td>
+            </tr>
+            <tr>
+              <td>3</td>
+              <td><span class="pill High">High</span></td>
+              <td>Add project → Local folder</td>
+              <td>CommandPalette.tsx:1033, 3066-3072</td>
+              <td>
+                The field starts as <code>~/</code>. Pasting <code>/tmp/x/pulse-api</code> gives
+                <code>~//tmp/x/pulse-api</code>. The quiet label "Create &amp; Add" then creates
+                <code>/root/tmp/x/pulse-api</code>, empty, and adds it as the project.
+              </td>
+              <td>
+                Treat a <code>/</code> typed after <code>~/</code> as a fresh absolute path, the way
+                Finder's "Go to folder" does. Before creating anything, show the full resolved path:
+                "Create new folder /root/tmp/…?"
+              </td>
+              <td>
+                <a href="https://critly.vercel.app/input-details">Input Details</a>,
+                <a href="https://critly.vercel.app/microcopy">Microcopy</a>
+              </td>
+            </tr>
+            <tr>
+              <td>4</td>
+              <td><span class="pill High">High</span></td>
+              <td>Sidebar → thread</td>
+              <td>Sidebar.tsx:1966-1985</td>
+              <td>
+                A click starts all the work. Cold switch 799&nbsp;ms; warm 283–434&nbsp;ms; 4× CPU
+                2,097&nbsp;ms cold and 860–1,190&nbsp;ms warm. Rows are
+                <code>div role="button"</code>, so there's no middle-click, no new tab and no link
+                to copy.
+              </td>
+              <td>
+                Prefetch the thread snapshot after 65&nbsp;ms of hover, on
+                <code>pointerdown</code> and on keyboard focus. Make rows
+                <code>&lt;a href&gt;</code>. Keep the old thread painted until the new one is ready.
+              </td>
+              <td><a href="https://critly.vercel.app/instant-navigation">Instant Navigation</a></td>
+            </tr>
+            <tr>
+              <td>5</td>
+              <td><span class="pill High">High</span></td>
+              <td>App load (prod build)</td>
+              <td>
+                vite build: _chat 1,065&nbsp;KB, main 999&nbsp;KB, utils 895&nbsp;KB, ChatMarkdown
+                516&nbsp;KB (decoded)
+              </td>
+              <td>
+                Opening one thread loads 247 JS files: 2,065&nbsp;KB compressed, 6,162&nbsp;KB
+                decoded. 2.5–3.3&nbsp;s of long tasks. The thread appears 5.4–7.1&nbsp;s after
+                navigation on desktop and 22.8–25.2&nbsp;s on a phone profile (slow 4G, 4× CPU). A
+                splash is all you see.
+              </td>
+              <td>
+                Keep the first chunk to the shell plus the timeline. Load ChatMarkdown's languages,
+                the diff worker, the file viewer, the theme editor and heic decoding on intent. Set
+                a CI budget, around 300&nbsp;KB compressed for the critical path.
+              </td>
+              <td><a href="https://critly.vercel.app/javascript-cost">JavaScript Cost</a></td>
+            </tr>
+            <tr>
+              <td>6</td>
+              <td><span class="pill High">High</span></td>
+              <td>Thread details card, diff stats (light)</td>
+              <td>index.css:2078, chat/DiffStatLabel.tsx:43-47</td>
+              <td>
+                <code>+0</code> is emerald-500 on white at 2.46:1. <code>-0</code> is red-500 at
+                3.79:1. Diff counts appear on every changed-files card.
+              </td>
+              <td>
+                In light mode, use the -700 steps for text (emerald-700 is 5.5:1, red-700 is 6.4:1).
+                Keep the -500 fills for bars and backgrounds.
+              </td>
+              <td><a href="https://critly.vercel.app/color-roles">Color Roles</a></td>
+            </tr>
+            <tr>
+              <td>7</td>
+              <td><span class="pill Medium">Medium</span></td>
+              <td>Model picker (both themes)</td>
+              <td>chat/ModelPickerContent.tsx:1016-1023</td>
+              <td>
+                Each model row repeats the provider name ("Claude") under the title. That text is
+                2.49–3.0:1. "9 models" is 2.72–3.0:1.
+              </td>
+              <td>
+                Drop the repeated provider line, since the left rail already says which provider.
+                Raise the row metadata to <code>muted-foreground</code> (4.5:1 or more).
+              </td>
+              <td><a href="https://critly.vercel.app/visual-hierarchy">Visual Hierarchy</a></td>
+            </tr>
+            <tr>
+              <td>8</td>
+              <td><span class="pill Medium">Medium</span></td>
+              <td>Every desktop screen (dark)</td>
+              <td>index.css:1222-1231</td>
+              <td>
+                The sidebar is <code>--background: #000</code>, <code>--card: #000</code>, set as
+                raw hex beside an <code>oklch(14.5% 0 0)</code> canvas. When you squint, the sidebar
+                outweighs the conversation: 14.2× on chat, 9.3× on diff, 6.1× on settings.
+              </td>
+              <td>
+                Lift the sidebar to the same step as the canvas or a little above it (about +0.02
+                L). Set it with a role token, not hex. Separate it with the existing 6% hairline.
+              </td>
+              <td>
+                <a href="https://critly.vercel.app/dark-mode">Dark Mode</a>,
+                <a href="https://critly.vercel.app/design-tokens">Design Tokens</a>
+              </td>
+            </tr>
+            <tr>
+              <td>9</td>
+              <td><span class="pill Medium">Medium</span></td>
+              <td>Composer</td>
+              <td>chat/ChatComposer.tsx (313&nbsp;KB), ComposerPromptEditorTiptap.tsx</td>
+              <td>
+                Measured on the same page and machine. The composer's keydown takes 32&nbsp;ms
+                median, 48 p90 and 80 worst. A plain textarea takes 16, 32 and 40. With 4× CPU the
+                worst is 408–656&nbsp;ms.
+              </td>
+              <td>
+                Paint the letter first. Move mention, skill and slash parsing, draft persistence and
+                placeholder logic off the keystroke path: defer them or work from transactions.
+                Budget: keydown under 16&nbsp;ms.
+              </td>
+              <td><a href="https://critly.vercel.app/responsiveness">Responsiveness</a></td>
+            </tr>
+            <tr>
+              <td>10</td>
+              <td><span class="pill Medium">Medium</span></td>
+              <td>Command palette</td>
+              <td>ui/dialog-styles.ts:1-10, index.css:414-418</td>
+              <td>
+                Ctrl+K reaches a painted input after 114–212&nbsp;ms (prod) and 229–339&nbsp;ms
+                (dev). After that, a 200&nbsp;ms fade plus <code>scale-98</code> plays over a
+                full-screen 4&nbsp;px backdrop blur.
+              </td>
+              <td>
+                Keep the palette mounted and open it with no animation. Drop the backdrop blur; a
+                plain 60% scrim is enough. Target the next frame.
+              </td>
+              <td>
+                <a href="https://critly.vercel.app/command-menu">Command Menu</a>,
+                <a href="https://critly.vercel.app/effect-cost">Effect Cost</a>
+              </td>
+            </tr>
+            <tr>
+              <td>11</td>
+              <td><span class="pill Medium">Medium</span></td>
+              <td>Long thread</td>
+              <td>chat/MessagesTimeline.tsx:1642 (LegendList)</td>
+              <td>
+                Wheel-scrolling an 8,699&nbsp;px thread drops 6–14 of 60 frames past 33&nbsp;ms,
+                worst 167–283&nbsp;ms. Phone: 12–17 of 60, worst 233–350&nbsp;ms.
+              </td>
+              <td>
+                Profile row mount cost: Shiki code blocks and file chips. Cache measured heights and
+                keep code highlighting off the scroll path.
+              </td>
+              <td><a href="https://critly.vercel.app/long-lists">Long Lists</a></td>
+            </tr>
+            <tr>
+              <td>12</td>
+              <td><span class="pill Medium">Medium</span></td>
+              <td>Chat, settings</td>
+              <td>index.css:128 (<code>--chat-content-max-width: 46rem</code>)</td>
+              <td>
+                Agent prose runs about 96 characters per line (644&nbsp;px at 14&nbsp;px). Settings
+                descriptions run 89–99 characters at 12&nbsp;px.
+              </td>
+              <td>
+                Cap prose at about 70ch, around 38rem at 14&nbsp;px, and let code blocks and tables
+                use the full 46rem. Cap settings descriptions at about 60ch.
+              </td>
+              <td><a href="https://critly.vercel.app/line-length">Line Length</a></td>
+            </tr>
+            <tr>
+              <td>13</td>
+              <td><span class="pill Medium">Medium</span></td>
+              <td>Sidebar, chat, composer</td>
+              <td>sidebar/SidebarThreadHeader.tsx:89-95, chat file chips</td>
+              <td>
+                Search input is 111×21. "New thread in …" is 54×22. Thread actions are 22&nbsp;px
+                tall. File chips are 14.5–17&nbsp;px tall. Snooze is 24×20. At 390, the composer
+                chips are 28&nbsp;px. The check flagged 256 targets.
+              </td>
+              <td>
+                Make every target at least 24&nbsp;px. On <code>pointer-coarse</code>, make them
+                44&nbsp;px, or extend the hit area with <code>::after</code> so the chip keeps its
+                look.
+              </td>
+              <td><a href="https://critly.vercel.app/hit-areas">Hit Areas</a></td>
+            </tr>
+            <tr>
+              <td>14</td>
+              <td><span class="pill Medium">Medium</span></td>
+              <td>Dialogs, send button, sidebar</td>
+              <td>chat/ComposerPrimaryActions.tsx:314, ui/dialog-styles.ts:2, ui/sheet.tsx:19</td>
+              <td>
+                22 cases of <code>transition: all</code>. The send button scales to 105% on hover.
+                44 transitions animate width, height, padding or top: sidebar buttons, the model
+                menu (<code>dropdown-glass</code>) and dialog <code>top</code>.
+              </td>
+              <td>
+                Name the properties. Remove the hover scale. Animate size with a transform, or don't
+                animate it.
+              </td>
+              <td>
+                <a href="https://critly.vercel.app/smooth-animation">Smooth Animation</a>,
+                <a href="https://critly.vercel.app/hover-restraint">Hover Restraint</a>
+              </td>
+            </tr>
+            <tr>
+              <td>15</td>
+              <td><span class="pill Medium">Medium</span></td>
+              <td>Codex threads, model picker</td>
+              <td>chat/ProviderStatusBanner.tsx:111, ModelPickerContent.tsx</td>
+              <td>
+                Codex isn't installed and Claude is ready. Even so, new threads defaulted to
+                <code>gpt-6-astra</code>. A red banner says "Check Settings → Providers → Codex →
+                Binary path" as prose, with no link. The Codex tab says "No models found" and gives
+                no reason.
+              </td>
+              <td>
+                Default to a provider that works. The banner gets two buttons: "Open Codex settings"
+                and "Use Claude for this thread". In the picker, write: "Codex isn't installed on
+                this machine. Set it up".
+              </td>
+              <td>
+                <a href="https://critly.vercel.app/empty-states">Empty States</a>,
+                <a href="https://critly.vercel.app/microcopy">Microcopy</a>
+              </td>
+            </tr>
+            <tr>
+              <td>16</td>
+              <td><span class="pill Medium">Medium</span></td>
+              <td>Settings → Providers</td>
+              <td>settings/ProviderSettingsPanel.tsx</td>
+              <td>
+                9 boxes, 4 deep: main &gt; card &gt; section card &gt; input. "Not found" sits
+                inside the "Display name" card, and the Codex toggle stays on. "Enable Claude" and
+                "Enable Codex" tie at 1.0× at both widths, so the broken provider weighs as much as
+                the working one.
+              </td>
+              <td>
+                Put the status in the provider header with its fix action. Let the sections sit on
+                one surface, grouped by space. Show a broken provider as "Needs setup", not as an
+                enabled toggle.
+              </td>
+              <td>
+                <a href="https://critly.vercel.app/taste-pass">Taste Pass</a>,
+                <a href="https://critly.vercel.app/whitespace">Whitespace</a>
+              </td>
+            </tr>
+            <tr>
+              <td>17</td>
+              <td><span class="pill Medium">Medium</span></td>
+              <td>Diff panel at 390</td>
+              <td>RightPanelTabs.tsx, RightPanelSheet.tsx</td>
+              <td>
+                The right panel opens 342&nbsp;px wide over the chat and leaves a 48&nbsp;px strip
+                of the thread showing. The only way out is the panel toggle.
+              </td>
+              <td>
+                Below about 600&nbsp;px of container, open diffs as a full-height sheet with a back
+                button and a swipe down.
+              </td>
+              <td><a href="https://critly.vercel.app/responsive">Responsive</a></td>
+            </tr>
+            <tr>
+              <td>18</td>
+              <td><span class="pill Medium">Medium</span></td>
+              <td>Thread context menu (web)</td>
+              <td>contextMenuFallback.ts:320-361</td>
+              <td>
+                The fallback menu is plain <code>&lt;button&gt;</code>s. Only the separators and
+                radios have roles: no <code>role="menu"</code> and no <code>menuitem</code>. Screen
+                readers hear a loose list of buttons.
+              </td>
+              <td>
+                Use <code>role="menu"</code> with <code>menuitem</code> children. Add roving focus
+                with the arrow keys and Escape. Return focus to the row.
+              </td>
+              <td><a href="https://critly.vercel.app/overlays">Overlays</a></td>
+            </tr>
+            <tr>
+              <td>19</td>
+              <td><span class="pill Medium">Medium</span></td>
+              <td>Delete thread</td>
+              <td>ConfirmDialogHost.tsx:89-90</td>
+              <td>
+                "Delete thread "New thread"? … [Cancel] [Confirm]". The red button says "Confirm".
+              </td>
+              <td>
+                Make the button repeat the verb: "Delete thread". Start focus on Cancel. Archive
+                stays the undoable path.
+              </td>
+              <td>
+                <a href="https://critly.vercel.app/destructive-actions">Destructive Actions</a>
+              </td>
+            </tr>
+            <tr>
+              <td>20</td>
+              <td><span class="pill Low">Low</span></td>
+              <td>Palette, dialogs</td>
+              <td>ui/dialog-styles.ts:8</td>
+              <td>
+                With <code>prefers-reduced-motion: reduce</code>, the palette still runs
+                <code>scale</code> for 200&nbsp;ms, along with opacity.
+              </td>
+              <td>
+                Under reduce, drop the scale and translate and keep a 150&nbsp;ms opacity fade (or
+                none at all for the palette).
+              </td>
+              <td><a href="https://critly.vercel.app/reduced-motion">Reduced Motion</a></td>
+            </tr>
+            <tr>
+              <td>21</td>
+              <td><span class="pill Low">Low</span></td>
+              <td>Everywhere</td>
+              <td>index.css:178-185, plus arbitrary sizes</td>
+              <td>
+                11 font sizes are in use: 12 (2,425 uses), 14 (1,622), 16, 10.3, 13, 8.3, 10, 11,
+                20, 24, 30. 13&nbsp;px sits next to 12 and 14, and 10.3 and 8.3 come from scaled
+                badges.
+              </td>
+              <td>
+                Use five steps for the UI: 11, 12, 14, 16 and 20, plus 30 for the hero. Map 13 to 12
+                or 14. Size badges from the scale, not with <code>scale()</code>.
+              </td>
+              <td><a href="https://critly.vercel.app/type-scale">Type Scale</a></td>
+            </tr>
+            <tr>
+              <td>22</td>
+              <td><span class="pill Low">Low</span></td>
+              <td>Everywhere</td>
+              <td>em-based paddings on 12–13&nbsp;px text</td>
+              <td>
+                39 spacing values, including 1.6, 3.4, 5.2, 5.6, 7, 7.2, 8.8, 9, 10 and
+                10.4&nbsp;px. 14 radii, including 5.16, 6.02, 9, 14, 18 and 22&nbsp;px.
+              </td>
+              <td>
+                Use 2, 4, 6, 8, 12, 16, 24, 32 for spacing. Use 6, 8, 10 and 16 for radii, with each
+                inner radius equal to the outer radius minus the padding.
+              </td>
+              <td><a href="https://critly.vercel.app/spacing-scale">Spacing Scale</a></td>
+            </tr>
+            <tr>
+              <td>23</td>
+              <td><span class="pill Low">Low</span></td>
+              <td>Sidebar (keyboard)</td>
+              <td>Sidebar.tsx:1975 and row actions</td>
+              <td>
+                Each row costs 3 tab stops (row, Snooze, Settle). Six threads take 18 Tabs before
+                the chat. The hidden actions get the default <code>auto 1px</code> outline.
+              </td>
+              <td>
+                Use one tab stop for the list, with roving focus on the arrow keys. Reach row
+                actions with →, the context-menu key or Shift+F10.
+              </td>
+              <td><a href="https://critly.vercel.app/focus-rings">Focus Rings</a></td>
+            </tr>
+            <tr>
+              <td>24</td>
+              <td><span class="pill Low">Low</span></td>
+              <td>File viewer tab</td>
+              <td>files/*, RightPanelTabs.tsx</td>
+              <td>
+                Clicking a file in the diff opens a tab. The tab stays blank for more than
+                1.5&nbsp;s, with no spinner and no skeleton, before the code appears.
+              </td>
+              <td>
+                Show the path header and line-number gutter at once. Add a quiet spinner if it takes
+                more than 400&nbsp;ms.
+              </td>
+              <td>
+                <a href="https://critly.vercel.app/performance-is-design">Performance Is Design</a>
+              </td>
+            </tr>
+            <tr>
+              <td>25</td>
+              <td><span class="pill Low">Low</span></td>
+              <td>Palette, sidebar, settings</td>
+              <td>taste overlay near misses</td>
+              <td>
+                Palette group label at 369&nbsp;px, rows at 361 and icons at 371–373 (2–8&nbsp;px
+                apart). Sidebar search icon at 16 and "Settled" at 18. Settings source buttons at
+                447, 452.5 and 454.5.
+              </td>
+              <td>Use one inset per column: labels, icons and row text on the same left edge.</td>
+              <td><a href="https://critly.vercel.app/alignment">Alignment</a></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 id="outside">Outside Critly</h3>
+      <ul class="tight">
+        <li>
+          The palette has no Rename, Archive, Delete, Mark unread or Fork for the current thread.
+          All of them exist in the thread context menu (<code>hooks/useThreadActionMenu.ts</code>).
+        </li>
+        <li>
+          Thread titles stay as the first 40 characters of the prompt ("Read src/monitors.js and
+          src/s…"). "Regenerate title" exists, but it is manual and buried.
+        </li>
+        <li>
+          Diff counts flip their order. The panel header says "+27 −2" and each file says "−1 +2".
+        </li>
+        <li>
+          The inline "3 changed files +9 −0" card is scoped to the latest turn. The panel opens on
+          "Changes +27 −2" for the whole worktree. The numbers disagree and neither one says which
+          scope it uses.
+        </li>
+        <li>
+          After a turn finishes, a sidebar row shows nothing new. "Mark unread" exists in the menu,
+          but finished and unseen threads don't get a mark of their own.
+        </li>
+        <li>
+          The pairing page doesn't say where a token comes from: "run <code>npx t3 pair</code> on
+          the host" or "Settings → Connections".
+        </li>
+        <li>
+          The blue sidebar art appears only on Dev and Nightly builds
+          (<code>SidebarStageBackdrop.tsx:15-23</code>). It is a channel marker, but it is also the
+          heaviest shape on those builds (2.7–8.7×). Nightly users see it every day, so a smaller
+          pill would carry the same information.
+        </li>
+      </ul>
+
+      <h2 id="composition">What each screen leads with</h2>
+      <p class="meta">
+        Taste pass at 1280 on the stable look (Dev art hidden) and at 390. "Lead" is the heaviest
+        shape after a 6&nbsp;px blur, with its ratio over the runner-up.
+      </p>
+      <div class="scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Screen</th>
+              <th>Should lead with</th>
+              <th>Light 1280</th>
+              <th>Dark 1280</th>
+              <th>390</th>
+              <th>Boxes · depth · left edges</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Chat (long thread)</td>
+              <td>Latest exchange</td>
+              <td>Your last message, 1.6× (good)</td>
+              <td>Black sidebar, 14.2×</td>
+              <td>Send button, 4.3× / 3.3×</td>
+              <td class="num">5 · 2 · 37</td>
+            </tr>
+            <tr>
+              <td>New thread</td>
+              <td>Headline + composer</td>
+              <td>"What should we build in pulse-api?", 2.5×</td>
+              <td>Black sidebar, 4.2×</td>
+              <td>Headline, 1.6×</td>
+              <td class="num">4 · 2 · 26</td>
+            </tr>
+            <tr>
+              <td>Diff panel</td>
+              <td>The diff</td>
+              <td>README.md chip, weak 1.3×</td>
+              <td>Black sidebar, 9.3×</td>
+              <td>Send button behind the panel, 2.2–2.9×</td>
+              <td class="num">6 · 2 · 45</td>
+            </tr>
+            <tr>
+              <td>Settings → General</td>
+              <td>The setting rows</td>
+              <td>"Project grouping" toggle, 2.4×</td>
+              <td>Black sidebar, 6.1×</td>
+              <td>Tie, 1.0×</td>
+              <td class="num">4 · 2 · 22</td>
+            </tr>
+            <tr>
+              <td>Settings → Providers</td>
+              <td>Which provider works</td>
+              <td>Tie: "Enable Claude" vs "Enable Codex", 1.0×</td>
+              <td>Black sidebar, 6.1×</td>
+              <td>Tie: the same two toggles, 1.0×</td>
+              <td class="num">9 · 4 · 23</td>
+            </tr>
+            <tr>
+              <td>Sidebar (row hovered)</td>
+              <td>The thread list</td>
+              <td>Tie: hovered row vs chat text, 1.15×</td>
+              <td>Black sidebar, 12.6×</td>
+              <td>Sidebar art / send button</td>
+              <td class="num">6 · 2 · 41</td>
+            </tr>
+            <tr>
+              <td>Command palette</td>
+              <td>Input + active row</td>
+              <td>Tie: a palette row vs the dimmed chat behind it, 1.03×</td>
+              <td>Black sidebar through the scrim, 13.5×</td>
+              <td>Send button behind the scrim, 3–4×</td>
+              <td class="num">6 · 2 · 46</td>
+            </tr>
+            <tr>
+              <td>Link PR dialog</td>
+              <td>Input + Link</td>
+              <td>"Link", 2.2× (good)</td>
+              <td>Black sidebar through the scrim, 4.0×</td>
+              <td>"Link", 3.1–3.2×</td>
+              <td class="num">7 · 2 · 41</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note">
+        Over the palette, the page behind still competes with the panel. The scrim is 60% of the
+        background plus a 4&nbsp;px blur, and the panel is translucent glass, so the dimmed chat
+        (light) and the black sidebar (dark) weigh as much as the palette or more. An opaque panel
+        with a plain, slightly stronger scrim would win the squint and cost less (finding 10).
+      </p>
+
+      <h2 id="performance">Performance</h2>
+      <p class="meta">
+        Production build (<code>vite build</code>, served with <code>vite preview</code>) against
+        the local server, 3 runs each, medians. Desktop: 1280×800, no throttling. Phone: 390×844, 4×
+        CPU, 1.6&nbsp;Mbps / 150&nbsp;ms. The container's CPU is slower than a recent laptop, so
+        compare ratios, not absolutes. The textarea baseline below was measured on the same machine.
+      </p>
+      <div class="kpis">
+        <div class="kpi">
+          <b>5.4–7.1 s</b><span>open a thread, desktop (phone: 22.8–25.2 s)</span>
+        </div>
+        <div class="kpi">
+          <b>283–434 ms</b><span>switch thread, warm (cold 799 ms; 4× CPU 0.9–2.1 s)</span>
+        </div>
+        <div class="kpi">
+          <b>114–212 ms</b><span>Ctrl+K to painted palette, then a 200 ms fade</span>
+        </div>
+        <div class="kpi">
+          <b>32 ms</b><span>median keydown in composer (plain textarea: 16 ms)</span>
+        </div>
+        <div class="kpi">
+          <b>2.07 MB</b><span>compressed JS to open one thread (6.2 MB decoded)</span>
+        </div>
+        <div class="kpi">
+          <b>10–28%</b><span>frames over 33 ms while scrolling a long thread</span>
+        </div>
+      </div>
+      <p class="meta" style="margin-top: 16px">
+        While waiting, you see the T3 splash on load (first contentful paint at 120&nbsp;ms) and the
+        old thread during a switch. Nothing tells you a switch is in progress. DOM size is fine:
+        1,383 elements on the long thread, which shows the virtualized timeline doing its job.
+      </p>
+
+      <h2 id="ideas">UI/UX ideas, ranked</h2>
+      <p class="meta">
+        Beyond the findings: friction I hit while using it, missing states, and what competitors do
+        better. Ranked by value for the effort. Sizes: S is up to 2 days, M about a week, L more.
+      </p>
+      <div class="scroll">
+        <table class="ideas">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Problem</th>
+              <th>Idea</th>
+              <th>Size</th>
+              <th>Where</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1</td>
+              <td>You can't tell which threads need you. Every row ends in the same model icon.</td>
+              <td>
+                A status glyph per row: running (exists), needs input (amber), done and unread
+                (accent dot), failed (red). Put the count in the tab title and dock badge. Codex app
+                and Conductor both lead with this.
+              </td>
+              <td class="size">S–M</td>
+              <td><code>Sidebar.tsx:1966</code>, <code>Sidebar.logic.ts</code></td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td>
+                Card rows are 78&nbsp;px, so about 6 threads fit in 800&nbsp;px. The project chip
+                repeats on every row.
+              </td>
+              <td>
+                Make compact the desktop default. The 36&nbsp;px "slim" row already exists
+                (<code>Sidebar.tsx:1793</code>). Group by project with one header per project. Put a
+                density toggle in Appearance.
+              </td>
+              <td class="size">S</td>
+              <td><code>Sidebar.tsx</code>, <code>settings/ThemeSettings.tsx</code></td>
+            </tr>
+            <tr>
+              <td>3</td>
+              <td>The palette can't act on the current thread.</td>
+              <td>
+                Add Rename…, Archive, Delete…, Mark unread, Fork, Copy link and Regenerate title,
+                with their shortcuts. Fix the active row and ranking first (findings 1–2).
+              </td>
+              <td class="size">S</td>
+              <td><code>CommandPalette.tsx</code>, <code>hooks/useThreadActionMenu.ts</code></td>
+            </tr>
+            <tr>
+              <td>4</td>
+              <td>The end of a turn is a wall of prose. What changed, and did the tests pass?</td>
+              <td>
+                A turn review card: files changed with counts, commands run, tests run with
+                pass/fail, duration and tokens. Actions: Open diff, Commit…, Undo turn (restores the
+                checkpoint). Like Codex app's task summary, but inline.
+              </td>
+              <td class="size">M</td>
+              <td><code>chat/MessagesTimeline.tsx</code>, checkpoint diff</td>
+            </tr>
+            <tr>
+              <td>5</td>
+              <td>A missing provider leaves you on a broken default.</td>
+              <td>
+                Pick the first ready provider for new threads. The banner gets "Use Claude for this
+                thread" and "Set up Codex" buttons. In the model picker, explain an empty provider
+                tab.
+              </td>
+              <td class="size">S</td>
+              <td><code>chat/ProviderStatusBanner.tsx</code>, model default resolution</td>
+            </tr>
+            <tr>
+              <td>6</td>
+              <td>Titles are raw prompt prefixes.</td>
+              <td>
+                Auto-title after the first reply, in 3–6 words, and allow Rename inline with a
+                double-click. "Regenerate title" exists already.
+              </td>
+              <td class="size">S–M</td>
+              <td>
+                server title generation, <code>Sidebar.tsx</code> <code>isRegeneratingTitle</code>
+              </td>
+            </tr>
+            <tr>
+              <td>7</td>
+              <td>Running several agents means clicking through threads to check on them.</td>
+              <td>
+                A "Running" overview: every active thread across projects, each with its live last
+                line, elapsed time, needs-input actions inline and a stop button. This is
+                Conductor's strongest view.
+              </td>
+              <td class="size">M–L</td>
+              <td>new route next to <code>_chat.pull-requests.tsx</code>; sidebar data</td>
+            </tr>
+            <tr>
+              <td>8</td>
+              <td>Switching threads from the keyboard needs the palette.</td>
+              <td>
+                Use Alt+↑/↓ for the previous and next thread and Alt+Shift+↓ for the next one that
+                needs you. Show these in the palette.
+              </td>
+              <td class="size">S</td>
+              <td><code>packages/shared/src/keybindings.ts</code></td>
+            </tr>
+            <tr>
+              <td>9</td>
+              <td>The "Local folder" path is easy to get wrong (finding 3).</td>
+              <td>
+                Normalize pasted absolute paths, list recent folders and accept a dropped folder on
+                desktop. Always show the resolved path before creating anything.
+              </td>
+              <td class="size">S</td>
+              <td><code>CommandPalette.tsx:1033</code></td>
+            </tr>
+            <tr>
+              <td>10</td>
+              <td>Diff scope is unclear: "+9 −0" inline vs "+27 −2" in the panel.</td>
+              <td>
+                Label the scope on both ("This turn" and "Uncommitted"). Use one order everywhere: +
+                then −.
+              </td>
+              <td class="size">S</td>
+              <td><code>DiffPanel.tsx</code>, <code>chat/DiffStatLabel.tsx</code></td>
+            </tr>
+            <tr>
+              <td>11</td>
+              <td>On phones, diffs and file views cover the thread awkwardly.</td>
+              <td>
+                Use a full-height sheet with a back button and swipe-down. Show the model's short
+                name in the composer chip, not only the icon.
+              </td>
+              <td class="size">S–M</td>
+              <td><code>RightPanelSheet.tsx</code>, composer chips</td>
+            </tr>
+            <tr>
+              <td>12</td>
+              <td>The pairing page doesn't say where a token comes from.</td>
+              <td>
+                One line: "On the host, run <code>npx t3 pair</code> or open Settings →
+                Connections." Add a QR code on desktop.
+              </td>
+              <td class="size">S</td>
+              <td><code>components/auth/PairingRouteSurface</code></td>
+            </tr>
+            <tr>
+              <td>13</td>
+              <td>Usage and cost live on a separate page.</td>
+              <td>
+                A small per-thread tokens and cost readout in the thread header, linking to Usage.
+              </td>
+              <td class="size">S–M</td>
+              <td><code>routes/usage.tsx</code>, chat header</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 id="mockups">Mockups of the strongest ideas</h3>
+      <p class="meta">
+        Built in HTML on the app's own dark tokens, Lucide icons and provider marks
+        (<code>mockups/t3.css</code>, <code>mockups/icons.js</code>), then rendered to PNG. The
+        "after" states also apply finding 8, a lifted dark sidebar.
+      </p>
+      <div class="shots">
+        <figure class="wide">
+          <img
+            src="mockups/01-palette-1600x900.png"
+            alt="Command palette before and after"
+            loading="lazy"
+          />
+          <figcaption>Findings 1, 2 and 10: a palette you can trust.</figcaption>
+        </figure>
+        <figure class="wide">
+          <img
+            src="mockups/02-sidebar-status-1600x900.png"
+            alt="Sidebar before and after with status per thread"
+            loading="lazy"
+          />
+          <figcaption>
+            Ideas 1 and 2: status per thread, compact rows, grouped by project (square version:
+            <code>02-sidebar-status-1200x1200.png</code>).
+          </figcaption>
+        </figure>
+        <figure class="wide">
+          <img
+            src="mockups/03-turn-review-1600x900.png"
+            alt="Turn review card concept"
+            loading="lazy"
+          />
+          <figcaption>Idea 4: a turn review card.</figcaption>
+        </figure>
+        <figure class="wide">
+          <img
+            src="mockups/04-running-overview-1600x900.png"
+            alt="Running overview concept"
+            loading="lazy"
+          />
+          <figcaption>Idea 7: the Running overview.</figcaption>
+        </figure>
+      </div>
+
+      <h2 id="plan">Fix plan</h2>
+      <p class="meta">
+        In order: system, then composition, details and performance. Each batch is about one PR.
+      </p>
+      <div class="batch">
+        <h3>Batch 1: System (tokens first)</h3>
+        <p>
+          Diff text colors to -700 in light (6). Give the dark sidebar a role token instead of
+          <code>#000</code> (8). Collapse the type scale to five UI steps (21). Snap spacing and
+          radii to the scale (22). Raise row metadata to 4.5:1 (7). Files:
+          <code>index.css</code> (lines 128, 178-185, 1222-1231, 2078),
+          <code>chat/DiffStatLabel.tsx</code>, <code>chat/ModelPickerContent.tsx</code>.
+        </p>
+      </div>
+      <div class="batch">
+        <h3>Batch 2: Composition</h3>
+        <p>
+          Flatten Providers settings to one surface, with status in the header (16). Cap prose line
+          length (12). Use a full-height diff sheet on narrow containers (17). Line up palette and
+          sidebar insets (25). Files: <code>settings/ProviderSettingsPanel.tsx</code>,
+          <code>chat/ChatCanvas.tsx</code>, <code>RightPanelSheet.tsx</code>,
+          <code>CommandPaletteResults.tsx</code>.
+        </p>
+      </div>
+      <div class="batch">
+        <h3>Batch 3: Details</h3>
+        <p>
+          One active row in the palette, plus ranking (1, 2). Normalize the Local folder path and
+          confirm it (3). Hit areas (13). Name properties instead of <code>transition: all</code>,
+          and remove the hover scale (14). Provider fallback and banner actions (15). Menu roles
+          (18). "Delete thread" (19). Reduced motion (20). Roving focus in the sidebar (23). File
+          viewer placeholder (24). Files: <code>ui/command.tsx</code>,
+          <code>CommandPalette.logic.ts</code>, <code>CommandPalette.tsx</code>,
+          <code>ui/dialog-styles.ts</code>, <code>chat/ComposerPrimaryActions.tsx</code>,
+          <code>contextMenuFallback.ts</code>, <code>ConfirmDialogHost.tsx</code>,
+          <code>chat/ProviderStatusBanner.tsx</code>.
+        </p>
+      </div>
+      <div class="batch">
+        <h3>Batch 4: Performance</h3>
+        <p>
+          Prefetch threads on intent and make rows links (4). Split the first bundle and set a JS
+          budget in CI (5). Take the composer keystroke path under 16&nbsp;ms (9). Instant palette
+          (10). Timeline scroll (11). Measure each change on its own, with before and after on the
+          prod build. Files: <code>Sidebar.tsx</code>, <code>routes/_chat.*</code>,
+          <code>vite.config.ts</code>, <code>chat/ChatComposer.tsx</code>,
+          <code>ComposerPromptEditorTiptap.tsx</code>, <code>chat/MessagesTimeline.tsx</code>.
+        </p>
+      </div>
+
+      <h2 id="screens">Screens</h2>
+      <p class="meta">
+        All captures, squints and overlays are in <code>shots/</code>. Each file is named
+        <code>&lt;screen&gt;-&lt;width&gt;-&lt;scheme&gt;</code>; <code>.squint.png</code> is the
+        blurred capture and <code>.taste.png</code> the boxes-and-edges overlay.
+        <code>stable-*</code> files have the Dev art hidden.
+      </p>
+      <div class="shots">
+        <figure class="wide">
+          <img
+            src="shots/palette-ranking-light.png"
+            alt="Command palette after typing Link pull: no row is highlighted and Copy thread ID is first"
+            loading="lazy"
+          />
+          <figcaption>
+            Finding 1–2. "Link pull": no row shows as active, and Enter runs "Copy thread ID", which
+            ranks first.
+          </figcaption>
+        </figure>
+        <figure>
+          <img
+            src="shots/stable-chat-1280-dark.squint.png"
+            alt="Dark chat screen blurred: the black sidebar is the heaviest shape"
+            loading="lazy"
+          />
+          <figcaption>
+            Finding 8. Dark squint: the <code>#000</code> sidebar outweighs the conversation
+            (14.2×).
+          </figcaption>
+        </figure>
+        <figure>
+          <img src="shots/stable-chat-1280-light.png" alt="Light chat screen" loading="lazy" />
+          <figcaption>
+            Light mode leads with the conversation (1.6×). The line length here is about 96
+            characters (finding 12).
+          </figcaption>
+        </figure>
+        <figure>
+          <img
+            src="shots/providers-1280-light.taste.png"
+            alt="Providers settings overlay showing 9 boxes nested 4 deep"
+            loading="lazy"
+          />
+          <figcaption>
+            Finding 16. Providers: 9 boxes, 4 deep, and an error inside "Display name".
+          </figcaption>
+        </figure>
+        <figure>
+          <img
+            src="shots/newthread-1280-light.png"
+            alt="New thread screen with the Codex error banner"
+            loading="lazy"
+          />
+          <figcaption>
+            Finding 15. A new thread defaulted to Codex, which isn't installed. It shows a red
+            banner with no action.
+          </figcaption>
+        </figure>
+        <figure>
+          <img
+            src="shots/delete-confirm-1280-dark.png"
+            alt="Delete thread dialog whose button says Confirm"
+            loading="lazy"
+          />
+          <figcaption>Finding 19. The red button says "Confirm".</figcaption>
+        </figure>
+        <figure>
+          <img
+            src="shots/thread-context-menu-1280-dark.png"
+            alt="Thread context menu"
+            loading="lazy"
+          />
+          <figcaption>
+            The thread menu has everything the palette lacks (Outside Critly), but no menu roles
+            (finding 18).
+          </figcaption>
+        </figure>
+        <figure>
+          <img
+            src="shots/diff-1280-light.png"
+            alt="Diff panel open next to the chat"
+            loading="lazy"
+          />
+          <figcaption>Diff panel. The inline card says +9 −0; the panel says +27 −2.</figcaption>
+        </figure>
+        <figure>
+          <img src="shots/composer-1280-dark.png" alt="Model picker open" loading="lazy" />
+          <figcaption>Finding 7. The model picker repeats "Claude" at 2.5–3:1.</figcaption>
+        </figure>
+        <figure>
+          <img src="shots/settings-1280-light.png" alt="Settings general" loading="lazy" />
+          <figcaption>
+            Settings → General. Clear and scoped ("Applying settings for All projects").
+          </figcaption>
+        </figure>
+        <figure>
+          <img src="shots/focus-6.png" alt="Keyboard focus ring on a sidebar row" loading="lazy" />
+          <figcaption>
+            The focus ring on rows is clear. The cost is 3 tab stops per row (finding 23).
+          </figcaption>
+        </figure>
+        <figure>
+          <img src="shots/pair-1280-dark.png" alt="Pairing page" loading="lazy" />
+          <figcaption>Pairing page. Plain, but it doesn't say where a token comes from.</figcaption>
+        </figure>
+        <figure class="phone">
+          <img src="shots/sidebar-390-light.png" alt="Sidebar on a phone" loading="lazy" />
+          <figcaption>390: six 78&nbsp;px card rows fill the screen.</figcaption>
+        </figure>
+        <figure class="phone">
+          <img
+            src="shots/diff-390-dark.png"
+            alt="Diff panel on a phone leaving a strip of chat"
+            loading="lazy"
+          />
+          <figcaption>
+            Finding 17. At 390, the diff leaves a 48&nbsp;px strip of the chat.
+          </figcaption>
+        </figure>
+        <figure class="phone">
+          <img src="shots/chat-390-dark.png" alt="Chat on a phone, dark" loading="lazy" />
+          <figcaption>390, dark. Reads well. The composer's model chip is icon-only.</figcaption>
+        </figure>
+        <figure class="phone">
+          <img src="shots/composer-390-dark.png" alt="Model picker on a phone" loading="lazy" />
+          <figcaption>390: the model picker.</figcaption>
+        </figure>
+      </div>
+
+      <h2 id="method">Method and limits</h2>
+      <ul class="tight">
+        <li>
+          <b>Setup.</b> I ran the dev server with an isolated home in a scratch directory, with real
+          data: 3 projects and 6 threads. The data came from 19 real Claude Haiku 5.5 turns, which
+          made real edits and commits, plus one 11-turn thread. Codex isn't installed in this box,
+          so I saw its error state but never a working Codex turn.
+        </li>
+        <li>
+          <b>Screens.</b> New thread, chat with a long thread, sidebar, composer and model picker,
+          Settings (General and Providers), command palette, the Link PR dialog, and the diff panel.
+          Each at 1280×800 and 390×844, light and dark. Also the pairing page, the thread context
+          menu and the delete confirmation.
+        </li>
+        <li>
+          <b>Tools.</b> Critly's <code>inventory.js</code>,
+          <code>check.js</code> (<code>__critlyCheck({})</code>) and <code>taste.js</code> (report,
+          squint and overlay) ran in an authenticated Playwright page. I didn't use the CLI, because
+          it can't get past pairing.
+        </li>
+        <li>
+          <b>Not reached.</b> The first-run "no projects" hero (<code>NoProjectsHero.tsx</code>),
+          hosted onboarding, the Electron shell, the native mobile app, the terminal drawer,
+          approvals (every thread ran with Full access), plan mode, and the pull-requests screen
+          with data.
+        </li>
+        <li>
+          <b>Dev only.</b> The blue sidebar art is the Dev/Nightly channel marker. I judged
+          composition on the stable look, and the production build confirms the art isn't there.
+        </li>
+        <li>I changed no app code. This is an audit, not a fix.</li>
+      </ul>
+    </main>
+  </body>
+</html>

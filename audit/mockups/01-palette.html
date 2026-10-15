@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Palette: before and after</title>
+    <link rel="stylesheet" href="t3.css" />
+    <style>
+      .win {
+        top: 84px;
+        width: 760px;
+        height: 668px;
+      }
+      .win.a {
+        left: 32px;
+      }
+      .win.b {
+        left: 808px;
+      }
+      .shot {
+        position: absolute;
+        inset: 0;
+        background: url(../shots/stable-chat-1280-dark.png) -150px -20px / 1280px 800px no-repeat;
+      }
+      .pal {
+        position: absolute;
+        left: 50%;
+        top: 40px;
+        transform: translateX(-50%);
+        width: 520px;
+        border-radius: 16px;
+        overflow: hidden;
+        zoom: 1.36;
+      }
+      .pal .q {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        height: 50px;
+        padding: 0 16px;
+        border-bottom: 1px solid rgb(255 255 255 / 6%);
+        font-size: 15px;
+      }
+      .pal .q .caret {
+        width: 1.5px;
+        height: 18px;
+        background: var(--foreground);
+        margin-left: -8px;
+      }
+      .pal .grp {
+        padding: 10px 16px 4px;
+        font-size: 12px;
+        color: var(--muted-foreground);
+      }
+      .pal .list {
+        padding: 0 8px 8px;
+      }
+      .item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-height: 36px;
+        padding: 6px 10px;
+        border-radius: 8px;
+        color: color-mix(in srgb, var(--foreground) 92%, transparent);
+      }
+      .item .ic {
+        color: var(--muted-foreground);
+      }
+      .item .sub {
+        display: block;
+        font-size: 12px;
+        line-height: 16px;
+        color: rgb(255 255 255 / 45%);
+      }
+      .item .right {
+        margin-left: auto;
+        display: flex;
+        gap: 4px;
+        align-items: center;
+      }
+      .item.dim {
+        color: rgb(255 255 255 / 55%);
+      }
+      .item.active {
+        background: color-mix(in srgb, var(--primary) 24%, transparent);
+        box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 50%, transparent);
+        color: #fff;
+      }
+      .item.active .ic {
+        color: #fff;
+      }
+      .item mark {
+        background: none;
+        color: inherit;
+        font-weight: 600;
+        text-decoration: underline;
+        text-decoration-color: color-mix(in srgb, var(--primary) 70%, #fff);
+        text-underline-offset: 3px;
+        text-decoration-thickness: 1.5px;
+      }
+      .item .kw {
+        font-size: 11px;
+        color: rgb(255 255 255 / 50%);
+        border: 1px solid rgb(255 255 255 / 12%);
+        border-radius: 4px;
+        padding: 0 5px;
+        line-height: 16px;
+      }
+      .foot {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        height: 38px;
+        padding: 0 14px;
+        background: rgb(255 255 255 / 3%);
+        border-top: 1px solid rgb(255 255 255 / 6%);
+        font-size: 12.5px;
+        color: var(--muted-foreground);
+      }
+      .foot span {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .note {
+        position: absolute;
+        top: 778px;
+        width: 740px;
+        font-size: 17px;
+        line-height: 25px;
+        color: rgb(255 255 255 / 62%);
+      }
+      .note b {
+        color: #fff;
+        font-weight: 500;
+      }
+      .x {
+        position: absolute;
+        width: 10px;
+        height: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="stage">
+      <div class="label" style="left: 32px; top: 44px">Before · type “link pull”, press Enter</div>
+      <div class="label" style="left: 808px; top: 44px">
+        <b>After</b> · the row Enter runs is the row you see
+      </div>
+
+      <!-- BEFORE: as shipped -->
+      <div class="window win a">
+        <div class="shot"></div>
+        <div class="scrim"></div>
+        <div class="pal glass">
+          <div class="q">
+            <span data-i="search" data-s="16" class="muted"></span><span>Link pull</span
+            ><span class="caret"></span>
+          </div>
+          <div class="grp">Actions</div>
+          <div class="list">
+            <div class="item">
+              <span data-i="link"></span
+              ><span>Copy thread ID<span class="sub mono">43550a47-ab1a-4148-8c50-20ac…</span></span
+              ><span class="right"><kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>C</kbd></span>
+            </div>
+            <div class="item">
+              <span data-i="link"></span><span>Link pull request to thread</span>
+            </div>
+            <div class="item dim">
+              <span data-i="link"></span><span>Show linked pull requests</span>
+            </div>
+          </div>
+          <div class="grp">Settings</div>
+          <div class="list">
+            <div class="item">
+              <span data-i="settings"></span
+              ><span
+                >Pull Request: Copy Link or Thread ID<span class="sub"
+                  >Settings · Keybindings</span
+                ></span
+              >
+            </div>
+          </div>
+          <div class="foot">
+            <span><kbd>↑</kbd><kbd>↓</kbd> Navigate</span><span><kbd>Enter</kbd> Select</span
+            ><span><kbd>Esc</kbd> Close</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- AFTER: proposed -->
+      <div class="window win b">
+        <div class="shot"></div>
+        <div class="scrim" style="backdrop-filter: none; background: rgb(0 0 0 / 72%)"></div>
+        <div
+          class="pal"
+          style="
+            background: var(--popover);
+            border: 1px solid rgb(255 255 255 / 10%);
+            box-shadow: var(--glass);
+          "
+        >
+          <div class="q">
+            <span data-i="search" data-s="16" class="muted"></span><span>Link pull</span
+            ><span class="caret"></span>
+          </div>
+          <div class="grp">This thread</div>
+          <div class="list">
+            <div class="item active">
+              <span data-i="link"></span><span><mark>Link pull</mark> request to thread…</span
+              ><span class="right"
+                ><kbd style="background: rgb(255 255 255 / 16%); color: #fff">↵</kbd></span
+              >
+            </div>
+            <div class="item">
+              <span data-i="git-pull-request"></span
+              ><span>Show <mark>link</mark>ed <mark>pull</mark> requests</span>
+            </div>
+            <div class="item">
+              <span data-i="copy"></span><span>Copy thread ID</span
+              ><span class="right"
+                ><span class="kw">pr link</span><kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>C</kbd></span
+              >
+            </div>
+          </div>
+          <div class="grp">Settings</div>
+          <div class="list">
+            <div class="item">
+              <span data-i="settings"></span
+              ><span
+                ><mark>Pull</mark> Request: Copy <mark>Link</mark> or Thread ID<span class="sub"
+                  >Settings · Keybindings</span
+                ></span
+              >
+            </div>
+          </div>
+          <div class="foot">
+            <span><kbd>↑</kbd><kbd>↓</kbd> Navigate</span><span><kbd>↵</kbd> Link pull request</span
+            ><span><kbd>Esc</kbd> Close</span>
+          </div>
+        </div>
+      </div>
+      <div class="note" style="left: 40px">
+        <b>No row is highlighted, and Enter copies the thread ID.</b> The exact title match ranks
+        second, because titles aren't part of the search terms.
+      </div>
+      <div class="note" style="left: 816px">
+        <b>Title matches rank first, and the active row is painted.</b> The footer names what Enter
+        does, and a keyword match shows why a row matched. It opens on the next frame, with no fade.
+      </div>
+    </div>
+    <script src="icons.js"></script>
+  </body>
+</html>

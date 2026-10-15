@@ -1,0 +1,522 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Turn review card</title>
+    <link rel="stylesheet" href="t3.css" />
+    <style>
+      .win {
+        left: 40px;
+        top: 64px;
+        width: 1520px;
+        height: 812px;
+      }
+      .z {
+        zoom: 1.12;
+        display: flex;
+        width: 1357px;
+        height: 725px;
+      }
+      .row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        height: 30px;
+        padding: 0 10px;
+        border-radius: 7px;
+        font-size: 13.5px;
+        color: rgb(241 243 247 / 78%);
+      }
+      .row .tt {
+        flex: 1;
+        min-width: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .row .tm {
+        font-size: 12px;
+        color: rgb(255 255 255 / 38%);
+        font-variant-numeric: tabular-nums;
+      }
+      .row.sel {
+        background: rgb(255 255 255 / 9%);
+        color: #fff;
+      }
+      .st {
+        width: 16px;
+        height: 16px;
+        display: grid;
+        place-items: center;
+        flex: none;
+      }
+      .ring {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        border: 1.5px solid rgb(255 255 255 / 25%);
+      }
+      .dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--primary);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent);
+      }
+      .proj {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        height: 28px;
+        padding: 0 10px;
+        margin-top: 8px;
+        font-size: 12.5px;
+        font-weight: 500;
+        color: rgb(255 255 255 / 70%);
+      }
+      .proj .n {
+        margin-left: auto;
+        font-size: 11px;
+        color: rgb(255 255 255 / 35%);
+        font-weight: 400;
+      }
+      .feed {
+        flex: 1;
+        overflow: hidden;
+        padding-top: 6px;
+      }
+      /* the card */
+      .review {
+        margin: 18px 0 8px;
+        border: 1px solid rgb(255 255 255 / 9%);
+        border-radius: 14px;
+        background: color-mix(in srgb, var(--background) 94%, #fff);
+        box-shadow: inset 0 1px rgb(255 255 255 / 4%);
+        overflow: hidden;
+      }
+      .rv-head {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 14px 12px 16px;
+        border-bottom: 1px solid rgb(255 255 255 / 6%);
+      }
+      .rv-head .t {
+        font-weight: 500;
+        white-space: nowrap;
+      }
+      .rv-head > * {
+        white-space: nowrap;
+      }
+      .btn {
+        white-space: nowrap;
+      }
+      .rv-head .m {
+        color: var(--muted-foreground);
+        font-size: 13px;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      .rv-head .acts {
+        margin-left: auto;
+        display: flex;
+        gap: 6px;
+      }
+      .rv-body {
+        display: grid;
+        grid-template-columns: 1fr 236px;
+      }
+      .files {
+        padding: 10px 8px 12px;
+        border-right: 1px solid rgb(255 255 255 / 6%);
+      }
+      .files .hd {
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+        padding: 0 8px 6px;
+        font-size: 13px;
+        color: var(--muted-foreground);
+      }
+      .file {
+        display: grid;
+        grid-template-columns: 18px 1fr 56px 64px;
+        align-items: center;
+        gap: 8px;
+        height: 30px;
+        padding: 0 8px;
+        border-radius: 7px;
+        font-size: 13px;
+      }
+      .file .p {
+        font-family: var(--font-mono);
+        font-size: 12.5px;
+        color: rgb(255 255 255 / 85%);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .file .p span {
+        color: rgb(255 255 255 / 45%);
+      }
+      .file .n {
+        font-family: var(--font-mono);
+        font-size: 12px;
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+      .bar {
+        display: flex;
+        gap: 2px;
+        justify-content: flex-end;
+      }
+      .bar i {
+        width: 7px;
+        height: 7px;
+        border-radius: 2px;
+        background: rgb(255 255 255 / 10%);
+      }
+      .bar i.a {
+        background: var(--diff-addition);
+      }
+      .bar i.d {
+        background: var(--diff-deletion);
+      }
+      .file:hover,
+      .file.hl {
+        background: rgb(255 255 255 / 4%);
+      }
+      .checks {
+        padding: 12px 14px;
+        display: grid;
+        gap: 12px;
+        align-content: start;
+        font-size: 13px;
+      }
+      .ck {
+        display: grid;
+        grid-template-columns: 18px 1fr;
+        gap: 8px;
+      }
+      .ck .l {
+        color: rgb(255 255 255 / 88%);
+      }
+      .ck .s {
+        color: var(--muted-foreground);
+        font-size: 12px;
+        line-height: 17px;
+      }
+      .ok {
+        color: var(--success-foreground);
+      }
+      .cap {
+        position: absolute;
+        left: 40px;
+        top: 24px;
+        font-size: 13px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: rgb(255 255 255 / 45%);
+        font-weight: 500;
+      }
+      .cap b {
+        color: rgb(255 255 255 / 88%);
+        font-weight: 500;
+      }
+      .details {
+        position: absolute;
+        right: 16px;
+        top: 64px;
+        width: 250px;
+        border-radius: 14px;
+        border: 1px solid rgb(255 255 255 / 8%);
+        background: var(--card);
+        padding: 6px;
+        font-size: 13px;
+        color: rgb(255 255 255 / 80%);
+      }
+      .details div {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        height: 30px;
+        padding: 0 8px;
+      }
+      .details .sep {
+        height: 1px;
+        padding: 0;
+        margin: 4px 0;
+        background: rgb(255 255 255 / 6%);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="stage">
+      <div class="cap">
+        <b>Concept</b> · a turn ends with what changed, what ran and what to do next
+      </div>
+      <div class="window win">
+        <div class="z">
+          <div class="sb lifted" style="width: 262px">
+            <div class="sb-top">
+              <div class="lights color"><i></i><i></i><i></i></div>
+            </div>
+            <div class="sb-search">
+              <span data-i="search" data-s="16"></span><span class="grow">Search</span
+              ><span class="sb-icons"
+                ><span data-i="list-filter" data-s="16"></span
+                ><span data-i="folder-plus" data-s="16"></span
+                ><span data-i="square-pen" data-s="16"></span
+              ></span>
+            </div>
+            <div class="sb-list">
+              <div class="proj">
+                <span class="chip pa">PA</span>pulse-api<span class="n">3</span>
+              </div>
+              <div class="row sel">
+                <span class="st"><span class="ring"></span></span
+                ><span class="tt">Healthz route and monitor status</span><span class="tm">now</span>
+              </div>
+              <div class="row">
+                <span
+                  class="st"
+                  style="color: var(--info-foreground)"
+                  data-i="loader-circle"
+                  data-s="15"
+                ></span
+                ><span class="tt">Move monitors to SQLite</span
+                ><span class="tm" style="color: var(--info-foreground)">1:42</span>
+              </div>
+              <div class="row">
+                <span class="st"><span class="ring"></span></span
+                ><span class="tt">404 for unknown monitor ids</span><span class="tm">11m</span>
+              </div>
+              <div class="proj"><span class="chip cy">◧</span>critly<span class="n">4</span></div>
+              <div class="row">
+                <span class="st"><span class="dot"></span></span
+                ><span class="tt" style="color: #fff; font-weight: 500"
+                  >Motion durations by concept</span
+                ><span class="tm">3m</span>
+              </div>
+              <div class="row">
+                <span class="st"><span class="ring"></span></span
+                ><span class="tt">CHANGELOG entry for taste pass</span><span class="tm">8m</span>
+              </div>
+              <div class="row">
+                <span class="st"><span class="ring"></span></span
+                ><span class="tt">Which concepts mention 120Hz</span><span class="tm">2h</span>
+              </div>
+              <div class="proj"><span class="chip sr">SR</span>server<span class="n">1</span></div>
+              <div class="row">
+                <span class="st"><span class="ring"></span></span
+                ><span class="tt">Explain the orchestrator outbox</span><span class="tm">1d</span>
+              </div>
+            </div>
+            <div class="sb-foot">
+              <span data-i="settings" data-s="16"></span
+              ><span data-i="git-pull-request" data-s="16"></span
+              ><span data-i="chart-column" data-s="16"></span>
+            </div>
+          </div>
+
+          <div class="main">
+            <div class="topbar">
+              <span class="crumb"><span class="chip pa">PA</span>pulse-api</span
+              ><span class="muted">/</span
+              ><span class="title">Healthz route and monitor status</span
+              ><span class="right"
+                ><span data-i="text" data-s="16"></span
+                ><span data-i="panel-bottom" data-s="16"></span
+                ><span data-i="panel-right" data-s="16"></span
+              ></span>
+            </div>
+            <div class="feed">
+              <div class="col" style="max-width: 780px; padding-right: 20px">
+                <div class="umsg">
+                  Add a 'status' field to each monitor in listMonitors: 'up' if the last check is
+                  newer than 2× intervalSec, else 'down'. Add a test. Also add a /healthz route.
+                  Don't commit.
+                </div>
+                <div class="worked" style="margin-top: 22px">
+                  <span>Worked for 11s</span><span data-i="chevron-right" data-s="14"></span>
+                </div>
+                <div class="prose">
+                  <p>
+                    I added <code>GET /healthz</code>, which returns <code>200</code> with the body
+                    <code>ok</code>, and a <code>status</code> field on every monitor in
+                    <span class="fchip"><span class="js">JS</span>monitors.js</span>. All 9 tests
+                    pass, including two new ones. Nothing is committed.
+                  </p>
+                </div>
+
+                <div class="review">
+                  <div class="rv-head">
+                    <span data-i="circle-check" data-s="16" class="ok"></span>
+                    <span class="t">Turn finished</span>
+                    <span class="m"
+                      ><span>11s</span>·<span
+                        style="display: inline-flex; align-items: center; gap: 5px"
+                        ><span data-b="claude" data-s="12"></span>Claude Haiku 5.5</span
+                      ></span
+                    >
+                    <span class="acts">
+                      <span class="btn ghost"
+                        ><span data-i="undo-2" data-s="14"></span>Undo turn</span
+                      >
+                      <span class="btn"
+                        ><span data-i="git-commit-horizontal" data-s="14"></span>Commit…</span
+                      >
+                      <span class="btn primary"
+                        ><span data-i="file-diff" data-s="14"></span>Review diff</span
+                      >
+                    </span>
+                  </div>
+                  <div class="rv-body">
+                    <div class="files">
+                      <div class="hd">
+                        <span style="color: rgb(255 255 255 / 85%)">4 files changed</span
+                        ><span class="stat"
+                          ><span class="add">+27</span> <span class="del">−2</span></span
+                        ><span style="margin-left: auto; font-size: 12px">this turn</span>
+                      </div>
+                      <div class="file hl">
+                        <span
+                          class="js"
+                          style="
+                            font-size: 7px;
+                            font-weight: 700;
+                            background: #e8c547;
+                            color: #222;
+                            border-radius: 2px;
+                            padding: 0 1px;
+                            line-height: 9px;
+                            width: max-content;
+                          "
+                          >JS</span
+                        ><span class="p"><span>src/</span>monitors.js</span
+                        ><span class="n"
+                          ><span class="add">+6</span> <span class="del">−1</span></span
+                        ><span class="bar"
+                          ><i class="a"></i><i class="a"></i><i class="a"></i><i class="d"></i
+                          ><i></i
+                        ></span>
+                      </div>
+                      <div class="file">
+                        <span
+                          class="js"
+                          style="
+                            font-size: 7px;
+                            font-weight: 700;
+                            background: #e8c547;
+                            color: #222;
+                            border-radius: 2px;
+                            padding: 0 1px;
+                            line-height: 9px;
+                            width: max-content;
+                          "
+                          >JS</span
+                        ><span class="p"><span>src/</span>server.js</span
+                        ><span class="n"><span class="add">+1</span></span
+                        ><span class="bar"><i class="a"></i><i></i><i></i><i></i><i></i></span>
+                      </div>
+                      <div class="file">
+                        <span
+                          class="js"
+                          style="
+                            font-size: 7px;
+                            font-weight: 700;
+                            background: #e8c547;
+                            color: #222;
+                            border-radius: 2px;
+                            padding: 0 1px;
+                            line-height: 9px;
+                            width: max-content;
+                          "
+                          >JS</span
+                        ><span class="p"><span>test/</span>checks.test.js</span
+                        ><span class="n"><span class="add">+18</span></span
+                        ><span class="bar"
+                          ><i class="a"></i><i class="a"></i><i class="a"></i><i class="a"></i
+                          ><i class="a"></i
+                        ></span>
+                      </div>
+                      <div class="file">
+                        <span
+                          style="font-size: 9px; font-weight: 700; color: var(--success-foreground)"
+                          >M↓</span
+                        ><span class="p">README.md</span
+                        ><span class="n"
+                          ><span class="add">+2</span> <span class="del">−1</span></span
+                        ><span class="bar"
+                          ><i class="a"></i><i class="d"></i><i></i><i></i><i></i
+                        ></span>
+                      </div>
+                    </div>
+                    <div class="checks">
+                      <div class="ck">
+                        <span data-i="flask-conical" data-s="15" class="ok"></span>
+                        <div>
+                          <div class="l">Tests passed <span class="ok">9/9</span></div>
+                          <div class="s mono" style="font-size: 11.5px">node --test · 1.2s</div>
+                        </div>
+                      </div>
+                      <div class="ck">
+                        <span data-i="square-terminal" data-s="15" class="muted"></span>
+                        <div>
+                          <div class="l">3 commands</div>
+                          <div class="s">
+                            <span class="mono" style="font-size: 11.5px">npm test</span> ×2,
+                            <span class="mono" style="font-size: 11.5px">git status</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="ck">
+                        <span data-i="git-branch" data-s="15" class="muted"></span>
+                        <div>
+                          <div class="l">master, uncommitted</div>
+                          <div class="s">Checkpoint saved. Undo restores it.</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col" style="max-width: 780px; padding: 0 20px 18px">
+              <div class="composer">
+                <div class="ph">
+                  Ask anything, @tag files/folders, $use skills, or / for commands
+                </div>
+                <div class="bar">
+                  <span class="pill"
+                    ><span data-b="claude" data-s="14"></span>Claude Haiku 5.5<span
+                      data-i="chevron-down"
+                      data-s="14"
+                      class="muted"
+                    ></span></span
+                  ><span class="sep"></span
+                  ><span class="pill"
+                    ><span data-i="brain" data-s="15"></span>Medium<span
+                      data-i="chevron-down"
+                      data-s="14"
+                      class="muted"
+                    ></span></span
+                  ><span class="sep"></span
+                  ><span class="pill"
+                    ><span data-i="lock-open" data-s="15"></span>Full access<span
+                      data-i="chevron-down"
+                      data-s="14"
+                      class="muted"
+                    ></span></span
+                  ><span class="send"><span data-i="arrow-up" data-s="16"></span></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script src="icons.js"></script>
+  </body>
+</html>

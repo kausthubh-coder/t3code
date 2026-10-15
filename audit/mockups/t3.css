@@ -1,0 +1,454 @@
+/* T3 Code dark theme, copied from apps/web/src/index.css (:root @variant dark,
+   [data-app-sidebar] dark) so the mockups use the shipped values. "after"
+   surfaces use --sidebar-lifted, the proposed fix for the #000 sidebar. */
+:root {
+  color-scheme: dark;
+  --background: oklch(14.5% 0 0);
+  --foreground: oklch(97% 0 0);
+  --card: color-mix(in srgb, oklch(14.5% 0 0) 97%, #fff);
+  --popover: color-mix(in srgb, oklch(14.5% 0 0) 97%, #fff);
+  --primary: oklch(0.571 0.21 264);
+  --primary-foreground: #fff;
+  --muted: rgb(255 255 255 / 3%);
+  --muted-foreground: color-mix(in srgb, oklch(55.6% 0 0) 90%, #fff);
+  --accent: rgb(255 255 255 / 4%);
+  --border: rgb(255 255 255 / 6%);
+  --input: rgb(255 255 255 / 8%);
+  --success: oklch(69.6% 0.17 162.48);
+  --success-foreground: oklch(76.5% 0.177 163.223);
+  --warning: oklch(76.9% 0.188 70.08);
+  --warning-foreground: oklch(82.8% 0.189 84.429);
+  --error: color-mix(in srgb, oklch(63.7% 0.237 25.331) 90%, #fff);
+  --error-foreground: oklch(70.4% 0.191 22.216);
+  --info-foreground: oklch(70.7% 0.165 254.624);
+  --diff-addition: oklch(69.6% 0.17 162.48);
+  --diff-deletion: oklch(63.7% 0.237 25.331);
+  /* sidebar, as shipped */
+  --sidebar: #000;
+  --sidebar-foreground: #f1f3f7;
+  --sidebar-muted-foreground: #a3a3a3;
+  --sidebar-border: rgb(255 255 255 / 8%);
+  --sidebar-row-hover: color-mix(in srgb, #f1f3f7 8%, transparent);
+  --sidebar-row-active: color-mix(in srgb, #f1f3f7 11%, transparent);
+  --sidebar-row-selected: color-mix(in srgb, #f1f3f7 7%, transparent);
+  /* proposed: lift the sidebar a step above the canvas instead of #000 */
+  --sidebar-lifted: oklch(16.5% 0.002 286);
+  --radius: 10px;
+  --control-radius: 8px;
+  --shadow-composer-dark: 0 14px 32px -18px rgb(0 0 0 / 75%);
+  --glass: inset 0 1px rgb(255 255 255 / 4%), 0 24px 72px -20px rgb(0 0 0 / 90%);
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --font-mono:
+    ui-monospace, "SF Mono", "SFMono-Regular", Menlo, "JetBrains Mono", Consolas, monospace;
+  --stage: #070708;
+}
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  background: var(--stage);
+}
+body {
+  font-family: var(--font-sans);
+  color: var(--foreground);
+  -webkit-font-smoothing: antialiased;
+  font-size: 14px;
+  line-height: 20px;
+}
+.ic {
+  display: inline-block;
+  flex: none;
+  vertical-align: middle;
+}
+.mono {
+  font-family: var(--font-mono);
+}
+.muted {
+  color: var(--muted-foreground);
+}
+
+/* Stage: the 1600x900 (or 1200x1200) canvas a post image is cut from. */
+.stage {
+  position: relative;
+  width: 1600px;
+  height: 900px;
+  overflow: hidden;
+  background: var(--stage);
+}
+.stage.square {
+  width: 1200px;
+  height: 1200px;
+}
+.label {
+  position: absolute;
+  font-size: 13px;
+  line-height: 16px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgb(255 255 255 / 45%);
+  font-weight: 500;
+}
+.label b {
+  color: rgb(255 255 255 / 85%);
+  font-weight: 500;
+}
+
+/* The app window (desktop shell). */
+.window {
+  position: absolute;
+  display: flex;
+  overflow: hidden;
+  border-radius: 12px;
+  background: var(--background);
+  box-shadow:
+    0 0 0 1px rgb(255 255 255 / 9%),
+    0 40px 120px -30px rgb(0 0 0 / 90%);
+}
+.lights {
+  display: flex;
+  gap: 8px;
+  padding: 2px 0;
+}
+.lights i {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #3a3a3c;
+}
+.lights.color i:nth-child(1) {
+  background: #ff5f57;
+}
+.lights.color i:nth-child(2) {
+  background: #febc2e;
+}
+.lights.color i:nth-child(3) {
+  background: #28c840;
+}
+
+/* Sidebar */
+.sb {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  background: var(--sidebar);
+  border-right: 1px solid var(--sidebar-border);
+  color: var(--sidebar-foreground);
+}
+.sb.lifted {
+  background: var(--sidebar-lifted);
+}
+.sb-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 52px;
+  padding: 0 12px 0 16px;
+}
+.sb-top .name {
+  font-weight: 600;
+  font-size: 14px;
+}
+.sb-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  margin: 0 8px 6px;
+  padding: 0 8px;
+  color: var(--sidebar-muted-foreground);
+}
+.sb-search .grow {
+  flex: 1;
+}
+.sb-icons {
+  display: flex;
+  gap: 12px;
+  color: color-mix(in srgb, #a3a3a3 60%, #000);
+}
+.sb-list {
+  flex: 1;
+  overflow: hidden;
+  padding: 0 8px;
+}
+.sb-foot {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  height: 44px;
+  padding: 0 16px;
+  color: color-mix(in srgb, #a3a3a3 60%, #000);
+}
+.chip {
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1;
+}
+.chip.pa {
+  background: oklch(0.32 0.09 285);
+  color: oklch(0.85 0.08 285);
+}
+.chip.cy {
+  background: #f5f5f5;
+  color: #111;
+  border-radius: 4px;
+}
+.chip.sr {
+  background: oklch(0.35 0.08 55);
+  color: oklch(0.85 0.12 70);
+}
+
+/* Card row, as shipped (Sidebar.tsx:1966) */
+.card-row {
+  position: relative;
+  height: 78px;
+  margin: 2px 0;
+  padding: 9px 10px;
+  border-radius: 8px;
+}
+.card-row.sel {
+  background: var(--sidebar-row-active);
+}
+.card-row .r1 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--sidebar-muted-foreground);
+}
+.card-row .r1 .t {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+.card-row .r2 {
+  margin-top: 6px;
+  font-size: 14px;
+  line-height: 20px;
+  color: color-mix(in srgb, #f1f3f7 80%, transparent);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-right: 18px;
+}
+.card-row.sel .r2 {
+  color: #f1f3f7;
+}
+.card-row .r3 {
+  margin-top: 2px;
+  font-size: 12px;
+  line-height: 16px;
+  color: rgb(255 255 255 / 30%);
+}
+.card-row .prov {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+}
+
+/* Main column */
+.main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 52px;
+  padding: 0 16px 0 20px;
+  font-size: 14px;
+  flex: none;
+}
+.topbar .crumb {
+  color: var(--muted-foreground);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.topbar .title {
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.topbar .right {
+  margin-left: auto;
+  display: flex;
+  gap: 14px;
+  color: var(--muted-foreground);
+}
+.col {
+  width: 100%;
+  max-width: 736px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+.umsg {
+  margin-left: auto;
+  width: fit-content;
+  max-width: 80%;
+  background: var(--accent);
+  background: rgb(255 255 255 / 6%);
+  padding: 10px 14px;
+  border-radius: 16px;
+}
+.worked {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--muted-foreground);
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.prose {
+  line-height: 23px;
+}
+.prose p {
+  margin: 10px 0;
+}
+code,
+.code {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  background: rgb(255 255 255 / 6%);
+  border: 1px solid rgb(255 255 255 / 6%);
+  padding: 0 4px;
+  border-radius: 5px;
+}
+.fchip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12.5px;
+  background: oklch(0.62 0.09 220 / 0.12);
+  border: 1px solid oklch(0.62 0.09 220 / 0.3);
+  border-radius: 5px;
+  padding: 0 5px;
+  line-height: 19px;
+}
+.fchip .js {
+  font-size: 7px;
+  font-weight: 700;
+  background: #e8c547;
+  color: #222;
+  border-radius: 2px;
+  padding: 0 1px;
+  line-height: 9px;
+}
+
+/* Composer */
+.composer {
+  position: relative;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  box-shadow: var(--shadow-composer-dark);
+  padding: 14px 14px 10px 16px;
+}
+.composer .ph {
+  color: rgb(255 255 255 / 40%);
+  height: 48px;
+}
+.composer .bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: color-mix(in srgb, var(--foreground) 82%, transparent);
+  font-size: 14px;
+}
+.composer .pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  border-radius: 8px;
+}
+.composer .sep {
+  width: 1px;
+  height: 16px;
+  background: var(--border);
+  margin: 0 4px;
+}
+.send {
+  margin-left: auto;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--primary);
+  color: #fff;
+  opacity: 0.55;
+}
+
+/* Glass popups */
+.glass {
+  background: color-mix(
+    in srgb,
+    var(--popover) 18%,
+    color-mix(in srgb, var(--popover) 80%, transparent)
+  );
+  backdrop-filter: blur(16px) saturate(1.08);
+  border: 1px solid rgb(255 255 255 / 10%);
+  box-shadow: var(--glass);
+}
+.scrim {
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--background) 64%, transparent);
+  backdrop-filter: blur(4px);
+}
+kbd {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  line-height: 18px;
+  padding: 0 5px;
+  border-radius: 4px;
+  background: rgb(255 255 255 / 7%);
+  color: color-mix(in srgb, var(--foreground) 75%, transparent);
+}
+.stat {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.add {
+  color: var(--diff-addition);
+}
+.del {
+  color: var(--diff-deletion);
+}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: var(--control-radius);
+  font-size: 13px;
+  font-weight: 500;
+  border: 1px solid rgb(255 255 255 / 9%);
+  background: rgb(255 255 255 / 4%);
+  color: var(--foreground);
+}
+.btn.primary {
+  background: var(--primary);
+  border-color: transparent;
+  color: #fff;
+}
+.btn.ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--muted-foreground);
+}
