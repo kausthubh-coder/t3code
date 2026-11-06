@@ -170,4 +170,9 @@ describe("acknowledgeComposerNativeEvent", () => {
     expect(acknowledgeComposerNativeEvent(76, 77)).toBe(77);
     expect(acknowledgeComposerNativeEvent(77, 77)).toBeNull();
   });
+
+  it("drops a newer native edit typed before the editor applied a send's clear", () => {
+    expect(acknowledgeComposerNativeEvent(4, 6, 1, 0)).toBeNull();
+    expect(acknowledgeComposerNativeEvent(4, 5, 1, 1)).toBe(5);
+  });
 });
