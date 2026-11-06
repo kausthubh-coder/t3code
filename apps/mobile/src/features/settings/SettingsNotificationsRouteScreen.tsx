@@ -225,10 +225,19 @@ function ConfiguredSettingsNotificationsRouteScreen() {
     );
   };
 
+  const agentActivityLabel =
+    Platform.OS === "android"
+      ? supportsAndroidLiveUpdateSettings()
+        ? "Agent Live Updates"
+        : "Ongoing Agent Activity"
+      : "Live Activity Updates";
+
   const promptSignIn = () => {
     Dialog.alert(
       "Sign in to T3 Connect",
-      "Live Activity updates require T3 Connect so relay can deliver updates to this device.",
+      Platform.OS === "android"
+        ? `${agentActivityLabel} need T3 Connect so the relay can deliver them to this device.`
+        : "Live Activity updates require T3 Connect so relay can deliver updates to this device.",
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -447,13 +456,7 @@ function ConfiguredSettingsNotificationsRouteScreen() {
               liveActivityStatus === "linking"
             }
             icon="bolt.circle"
-            label={
-              Platform.OS === "android"
-                ? supportsAndroidLiveUpdateSettings()
-                  ? "Agent Live Updates"
-                  : "Ongoing Agent Activity"
-                : "Live Activity Updates"
-            }
+            label={agentActivityLabel}
             subtitle={agentAwarenessSubtitle}
             value={
               agentAwarenessPushAvailable &&
@@ -465,7 +468,11 @@ function ConfiguredSettingsNotificationsRouteScreen() {
           {liveActivityStatus === "signed-out" && canClearLiveActivitiesPreference ? (
             <SettingsRow
               icon="bolt.circle"
-              label="Turn off Live Activity preference"
+              label={
+                Platform.OS === "android"
+                  ? `Turn off ${agentActivityLabel}`
+                  : "Turn off Live Activity preference"
+              }
               onPress={() => void handleLiveActivitiesChange(false)}
             />
           ) : null}
