@@ -6,12 +6,12 @@ import {
   type MobileThemeVariables,
 } from "../../../lib/mobileTheme";
 
-// A dark page swallows the native shadow, so the fill alone has to lift the pill off the page
-// and off the cards it floats over.
+// A light pill is a card lifted by its shadow. A dark page swallows the native shadow, so the
+// fill alone has to lift the pill off the page and off the cards it floats over.
 function floatingContainerColor(colors: MobileThemeVariables) {
   const screen = colors["--color-screen"];
+  if (!isDarkThemeColor(screen)) return flattenThemeColor(colors["--color-card"], screen);
   const fill = flattenThemeColor(colors["--color-secondary"], screen);
-  if (!isDarkThemeColor(screen)) return fill;
   return themeColorWithContrast(
     fill,
     [screen, flattenThemeColor(colors["--color-grouped-card"], screen)],
@@ -31,11 +31,9 @@ export function androidWorkspaceNavigationColors(
     : floating
       ? floatingContainerColor(colors)
       : flattenThemeColor(themeColorWithAlpha(colors["--color-header-foreground"], 0.05), header);
-  // The lifted dark pill already took the secondary fill's place, so its indicator lifts further.
+  if (floating) return floatingSelectionColors(colors, containerColor);
   const indicatorColor = themeColorWithContrast(
-    floating && isDarkThemeColor(screen)
-      ? containerColor
-      : flattenThemeColor(colors["--color-secondary"], containerColor),
+    flattenThemeColor(colors["--color-secondary"], containerColor),
     containerColor,
     1.5,
   );
@@ -46,11 +44,31 @@ export function androidWorkspaceNavigationColors(
       flattenThemeColor(colors["--color-secondary-foreground"], indicatorColor),
       [indicatorColor, containerColor],
     ),
-    unselectedColor: floating
-      ? themeColorWithContrast(
-          flattenThemeColor(colors["--color-secondary-foreground"], containerColor),
-          containerColor,
-        )
-      : flattenThemeColor(colors["--color-header-foreground"], containerColor),
+    unselectedColor: flattenThemeColor(colors["--color-header-foreground"], containerColor),
+  };
+}
+
+// The floating pill marks the open tab with the accent, as the iOS tab bar does.
+function floatingSelectionColors(colors: MobileThemeVariables, containerColor: string) {
+  const dark = isDarkThemeColor(containerColor);
+  const indicatorColor = themeColorWithContrast(
+    flattenThemeColor(
+      themeColorWithAlpha(colors["--color-primary"], dark ? 0.28 : 0.16),
+      containerColor,
+    ),
+    containerColor,
+    1.5,
+  );
+  return {
+    containerColor,
+    indicatorColor,
+    selectedColor: themeColorWithContrast(
+      flattenThemeColor(colors["--color-primary-text"], indicatorColor),
+      [indicatorColor, containerColor],
+    ),
+    unselectedColor: themeColorWithContrast(
+      flattenThemeColor(colors["--color-foreground-muted"], containerColor),
+      containerColor,
+    ),
   };
 }

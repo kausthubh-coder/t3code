@@ -10,8 +10,8 @@ export function AndroidNavigationAppearanceSection() {
     <SettingsSection title="Navigation">
       <View accessibilityRole="radiogroup">
         <SettingsChoiceRow
-          label="One UI"
-          description="Floating navigation with a separate compose button."
+          label="Floating"
+          description="A floating tab bar with a separate compose button."
           disabled={!isReady}
           selected={androidNavigationStyle === "one-ui"}
           onPress={() => setAndroidNavigationStyle("one-ui")}

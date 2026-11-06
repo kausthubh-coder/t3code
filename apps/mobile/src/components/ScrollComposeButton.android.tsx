@@ -3,8 +3,10 @@ import { Box, ExtendedFloatingActionButton, Icon, Text } from "@expo/ui/jetpack-
 import {
   defaultMinSize,
   fillMaxWidth,
+  graphicsLayer,
   height,
   onSizeChanged,
+  Shapes,
   size,
 } from "@expo/ui/jetpack-compose/modifiers";
 import { useState } from "react";
@@ -16,6 +18,8 @@ import { resolveScaledTextRole } from "../lib/appearancePreferences";
 /** Keep the animated width and icon positioning entirely inside Compose, not Yoga. */
 export function ScrollComposeButton(props: {
   readonly expanded: boolean;
+  /** A circle beside the floating tab pill, matching its round ends. */
+  readonly round?: boolean;
   readonly onPress: () => void;
   readonly size?: number;
   readonly className?: string;
@@ -59,6 +63,10 @@ export function ScrollComposeButton(props: {
                 defaultMinSize({ minWidth: nativeSize }),
                 height(nativeSize),
                 onSizeChanged(rememberWidth),
+                // The FAB has no shape slot; the clipped layer draws the circle and its shadow.
+                ...(props.round
+                  ? [graphicsLayer({ shape: Shapes.Circle, clip: true, shadowElevation: 6 })]
+                  : []),
               ]}
             >
               <ExtendedFloatingActionButton.Icon>
@@ -98,7 +106,7 @@ export function ScrollComposeButton(props: {
           top: 0,
           bottom: 0,
           width: props.expanded ? buttonWidth * scale : fabSize,
-          borderRadius: 16 * scale,
+          borderRadius: props.round ? fabSize / 2 : 16 * scale,
           overflow: "hidden",
         }}
       />
