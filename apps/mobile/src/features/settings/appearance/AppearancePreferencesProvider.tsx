@@ -1,7 +1,6 @@
 import { createContext, startTransition, use, useMemo, type ReactNode } from "react";
 import { AppState, Appearance, Platform, useColorScheme } from "react-native";
 
-import { manufacturer } from "expo-device";
 import {
   resolveAndroidNavigationStyle,
   type AndroidNavigationStyle,
@@ -198,8 +197,6 @@ export function AppearancePreferencesProvider(props: { readonly children: ReactN
   );
   const androidNavigationStyle = resolveAndroidNavigationStyle(
     storedPreferences?.androidNavigationStyle,
-    manufacturer,
-    process.env.EXPO_PUBLIC_T3_FLOATING_TABS === "1",
   );
   const themeMode = normalizeMobileThemeMode(storedPreferences?.themeMode);
   const themeAppearance = themeMode === "system" ? systemColorScheme : themeMode;
