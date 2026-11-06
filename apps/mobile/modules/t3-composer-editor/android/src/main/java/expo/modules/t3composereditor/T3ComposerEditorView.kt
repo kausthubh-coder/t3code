@@ -21,6 +21,7 @@ import android.util.TypedValue
 import android.view.DragEvent
 import android.view.Gravity
 import android.view.GestureDetector
+import android.view.InputDevice
 import android.view.MotionEvent
 import android.view.KeyEvent
 import android.view.View
@@ -54,6 +55,7 @@ class T3ComposerEditorView(context: Context, appContext: AppContext) : ExpoView(
   private val onComposerSelectionChange by EventDispatcher()
   private val onComposerFocus by EventDispatcher()
   private val onComposerBlur by EventDispatcher()
+  private val onComposerSubmit by EventDispatcher()
   private val onComposerPasteImages by EventDispatcher()
   private val onComposerContextPress by EventDispatcher()
   private val onComposerPasteContext by EventDispatcher()
@@ -83,6 +85,7 @@ class T3ComposerEditorView(context: Context, appContext: AppContext) : ExpoView(
   private var autoCorrect = true
   private var spellCheck = true
   private var nativeEventCount = 0
+  private var resetGeneration = 0
 
   init {
     editor.setBackgroundColor(Color.TRANSPARENT)
@@ -116,6 +119,7 @@ class T3ComposerEditorView(context: Context, appContext: AppContext) : ExpoView(
         payload + mapOf(
           "value" to editor.text.toString(),
           "eventCount" to nativeEventCount,
+          "resetGeneration" to resetGeneration,
           "selection" to currentSelectionPayload(),
         )
       )
@@ -159,10 +163,14 @@ class T3ComposerEditorView(context: Context, appContext: AppContext) : ExpoView(
         mapOf(
           "value" to editor.text.toString(),
           "eventCount" to nativeEventCount,
+          "resetGeneration" to resetGeneration,
           "text" to text,
           "selection" to currentSelectionPayload(start, end),
         ),
       )
+    }
+    editor.submitListener = { alternate ->
+      onComposerSubmit(mapOf("alternate" to alternate))
     }
     editor.setOnFocusChangeListener { _, hasFocus ->
       if (hasFocus) {
@@ -191,6 +199,7 @@ class T3ComposerEditorView(context: Context, appContext: AppContext) : ExpoView(
               "value" to nextValue,
               "selection" to selection,
               "eventCount" to nativeEventCount,
+              "resetGeneration" to resetGeneration,
             ),
           )
           emitContentSizeIfNeeded()
@@ -214,11 +223,19 @@ class T3ComposerEditorView(context: Context, appContext: AppContext) : ExpoView(
     } catch (_: Exception) {
       return
     }
-    val mostRecentEventCount = document.optInt("mostRecentEventCount", -1)
-    if (mostRecentEventCount < nativeEventCount) return
+    val revision = acceptControlledDocument(
+      ComposerRevision(nativeEventCount, resetGeneration),
+      ComposerRevision(
+        document.optInt("mostRecentEventCount", -1),
+        document.optInt("resetGeneration", 0),
+      ),
+    ) ?: return
+    val isReset = revision.resetGeneration > resetGeneration
+    nativeEventCount = revision.eventCount
+    resetGeneration = revision.resetGeneration
 
     val value = document.optString("value")
-    if (document.optBoolean("isNativeEcho") && editor.text.toString() != value) return
+    if (!isReset && document.optBoolean("isNativeEcho") && editor.text.toString() != value) return
 
     val nextTokensJson = document.optString("tokensJson", "[]")
     val nextTokens = if (nextTokensJson == tokensJson) tokens else parseTokens(nextTokensJson)
@@ -318,6 +335,14 @@ class T3ComposerEditorView(context: Context, appContext: AppContext) : ExpoView(
   fun setReadOnly(readOnly: Boolean) {
     editor.readOnly = readOnly
     editor.isCursorVisible = editor.isEnabled && !readOnly
+  }
+
+  fun setEnterBehavior(behavior: String) {
+    editor.returnSends = behavior != "newline"
+  }
+
+  fun setSubmitEnabled(enabled: Boolean) {
+    editor.submitEnabled = enabled
   }
 
   fun setScrollEnabled(scrollEnabled: Boolean) {
@@ -427,6 +452,7 @@ class T3ComposerEditorView(context: Context, appContext: AppContext) : ExpoView(
         "value" to editor.text.toString(),
         "selection" to currentSelectionPayload(start, end),
         "eventCount" to nativeEventCount,
+        "resetGeneration" to resetGeneration,
       ),
     )
   }
@@ -512,6 +538,22 @@ private fun Context.resolveThemeColor(attribute: Int, fallback: Int): Int {
   return if (theme.resolveAttribute(attribute, value, true)) value.data else fallback
 }
 
+internal data class ComposerRevision(val eventCount: Int, val resetGeneration: Int)
+
+/**
+ * The revision the editor holds after a controlled document, or null when the document is stale.
+ * A parent reset (a send clear) wins over native edits it could not see; JS drops their events by
+ * generation, so the revision restarts where the parent last acknowledged.
+ */
+internal fun acceptControlledDocument(
+  native: ComposerRevision,
+  document: ComposerRevision
+): ComposerRevision? = when {
+  document.resetGeneration > native.resetGeneration -> document
+  document.eventCount < native.eventCount -> null
+  else -> native
+}
+
 private data class ComposerToken(
   val type: String,
   val source: String,
@@ -593,6 +635,9 @@ internal class SelectionAwareEditText(
   var pasteImagesListener: ((List<String>) -> Unit)? = null
   var pasteContextListener: ((Map<String, String>) -> Unit)? = null
   var pasteTextListener: ((String, Int, Int) -> Unit)? = null
+  var submitListener: ((Boolean) -> Unit)? = null
+  var submitEnabled = false
+  var returnSends = true
   var textPasteThresholdBytes = 0
   var maxInputChars = Int.MAX_VALUE
   var clipboardFragment = ""
@@ -650,7 +695,45 @@ internal class SelectionAwareEditText(
     return spans.isNotEmpty()
   }
 
+  // Mirrors the iOS key commands with Ctrl for Command. Returns `alternate`, or null to type Return.
+  // No composing-text guard: some IMEs keep a composing region over the last word while hardware typing.
+  private fun returnSubmission(keyCode: Int, event: KeyEvent): Boolean? {
+    val isReturn = keyCode == KeyEvent.KEYCODE_ENTER || keyCode == KeyEvent.KEYCODE_NUMPAD_ENTER
+    if (!isReturn || !canSubmit() || !isFromPhysicalKeyboard(event)) return null
+    return if (returnSends) {
+      when {
+        event.hasNoModifiers() -> false
+        event.hasModifiers(KeyEvent.META_CTRL_ON) -> true
+        else -> null
+      }
+    } else {
+      when {
+        event.hasModifiers(KeyEvent.META_CTRL_ON) -> false
+        event.hasModifiers(KeyEvent.META_CTRL_ON or KeyEvent.META_SHIFT_ON) -> true
+        else -> null
+      }
+    }
+  }
+
+  private fun canSubmit(): Boolean =
+    submitEnabled && submitListener != null && !readOnly && isEnabled
+
+  // IMEs can send Return from device 0 without FLAG_SOFT_KEYBOARD, so only a real alphabetic keyboard counts.
+  private fun isFromPhysicalKeyboard(event: KeyEvent): Boolean {
+    val device = event.device
+    return (event.flags and KeyEvent.FLAG_SOFT_KEYBOARD) == 0 &&
+      device != null &&
+      !device.isVirtual &&
+      device.keyboardType == InputDevice.KEYBOARD_TYPE_ALPHABETIC
+  }
+
   override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
+    val alternate = returnSubmission(keyCode, event)
+    if (alternate != null) {
+      // A held Return repeats; send once and swallow the repeats instead of typing newlines.
+      if (event.repeatCount == 0) submitListener?.invoke(alternate)
+      return true
+    }
     val handled = when (keyCode) {
       KeyEvent.KEYCODE_DEL -> deleteChip(true)
       KeyEvent.KEYCODE_FORWARD_DEL -> deleteChip(false)
